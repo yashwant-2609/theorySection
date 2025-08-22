@@ -7,6 +7,7 @@ const CameraInstructions = () => {
   const questionId = searchParams.get('questionId');
   const examId = searchParams.get('examId');
   const sectionId = searchParams.get('sectionId');
+  console.log("CameraInstructions", { questionId, examId, sectionId });
 
   const startCamera = () => {
     // Navigate to the camera page

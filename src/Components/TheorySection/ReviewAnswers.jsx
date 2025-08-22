@@ -1,8 +1,9 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { motion } from 'framer-motion';
-import { fadeIn } from './animations';
-import { QRCodeSVG } from 'qrcode.react';
+import { motion } from "framer-motion";
+import { fadeIn } from "./animations";
+import { QRCodeSVG } from "qrcode.react";
+import axios from "axios";
 
 const uploadOptions = [
   { label: "Upload from Device", value: "device" },
@@ -12,8 +13,12 @@ const uploadOptions = [
 
 const ReviewAnswers = () => {
   const { state } = useLocation();
-  const { answers, questionPaperData } = state || {};
-  const [uploadModal, setUploadModal] = useState({ open: false, qid: null, section: null });
+  const { answers, questionPaperData, userAnswerIds } = state || {};
+  const [uploadModal, setUploadModal] = useState({
+    open: false,
+    qid: null,
+    section: null,
+  });
   const [showCamera, setShowCamera] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
@@ -23,8 +28,12 @@ const ReviewAnswers = () => {
   const [tfAnswers, setTfAnswers] = useState({});
   const [uploadComplete, setUploadComplete] = useState(false);
   const [qrData, setQrData] = useState(null);
+  const [pendingUploads, setPendingUploads] = useState({}); // { [qid]: [File, ...] }
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef();
   const navigate = useNavigate();
+  const [uploadedStatus, setUploadedStatus] = useState({});
+  // const [uploadedImages, setUploadedImages] = useState({});
 
   // Initialize state from existing answers
   useEffect(() => {
@@ -37,12 +46,18 @@ const ReviewAnswers = () => {
       const matchState = {};
       // Initialize uploaded images
       const imagesState = {};
-      
-      questionPaperData.section_data?.forEach(section => {
-        section.question_data.forEach(q => {
-          if (q.question_type_name === "MCQ" && answers[q.question_id] !== undefined) {
+
+      questionPaperData.section_data?.forEach((section) => {
+        section.question_data.forEach((q) => {
+          if (
+            q.question_type_name === "MCQ1" &&
+            answers[q.question_id] !== undefined
+          ) {
             mcqState[q.question_id] = answers[q.question_id];
-          } else if (q.question_type_name === "True/False" && answers[q.question_id] !== undefined) {
+          } else if (
+            q.question_type_name === "True/False" &&
+            answers[q.question_id] !== undefined
+          ) {
             tfState[q.question_id] = answers[q.question_id];
           } else if (q.question_type_name === "Match the Following") {
             q.match_pairs.forEach((_, i) => {
@@ -51,13 +66,16 @@ const ReviewAnswers = () => {
                 matchState[key] = answers[key];
               }
             });
-          } else if (answers[q.question_id] && typeof answers[q.question_id] === 'object') {
+          } else if (
+            answers[q.question_id] &&
+            typeof answers[q.question_id] === "object"
+          ) {
             // Handle uploaded images
             imagesState[q.question_id] = answers[q.question_id];
           }
         });
       });
-      
+
       setMcqAnswers(mcqState);
       setTfAnswers(tfState);
       setMatchAnswers(matchState);
@@ -65,72 +83,164 @@ const ReviewAnswers = () => {
     }
   }, [answers, questionPaperData]);
 
+  useEffect(() => {
+  if (!userAnswerIds) return;
+  
+
+  const fetchUploadStatus = async () => {
+    const statusObj = {};
+    for (const qid in userAnswerIds) {
+      const user_answer_id = userAnswerIds[qid];
+      try {
+        const res = await axios.get(
+          `https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/get?user_answer_id=${user_answer_id}`
+        );
+        // If user_answer is not null, mark as uploaded
+        if (res.data && res.data.user_answer) {
+          statusObj[qid] = "uploaded";
+        }
+      } catch (err) {
+        // Optionally handle error
+      }
+    }
+    setUploadedStatus((prev) => ({ ...prev, ...statusObj }));
+  };
+
+  fetchUploadStatus();
+  // eslint-disable-next-line
+}, [userAnswerIds]);
+
   if (!answers || !questionPaperData) {
-    return <div className="p-8 text-center text-red-600">No answers to review.</div>;
+    return (
+      <div className="p-8 text-center text-red-600">No answers to review.</div>
+    );
   }
 
   // Handle MCQ answer change
   const handleMcqChange = (qid, value) => {
-    setMcqAnswers(prev => ({ ...prev, [qid]: value }));
+    setMcqAnswers((prev) => ({ ...prev, [qid]: value }));
   };
 
   // Handle True/False answer change
   const handleTfChange = (qid, value) => {
-    setTfAnswers(prev => ({ ...prev, [qid]: value === "true" }));
+    setTfAnswers((prev) => ({ ...prev, [qid]: value === "true" }));
   };
 
   // Handle Match answer change
   const handleMatchChange = (key, value) => {
-    setMatchAnswers(prev => ({ ...prev, [key]: value }));
+    setMatchAnswers((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Camera capture logic
+  // Update handleCapture to store File objects for upload
   const handleCapture = (e) => {
     const files = Array.from(e.target.files);
     if (files.length > 0 && uploadModal.qid) {
-      const newImages = files.map(file => URL.createObjectURL(file));
-      
-      setUploadedImages(prev => ({
+      setPendingUploads((prev) => ({
         ...prev,
-        [uploadModal.qid]: [...(prev[uploadModal.qid] || []), ...newImages]
+        [uploadModal.qid]: files,
       }));
-      
-      // After selecting images, show the Done button
       setUploadComplete(true);
     }
   };
 
-  // Remove uploaded image
-  const removeImage = (qid, index) => {
-    setUploadedImages(prev => {
-      const updated = [...prev[qid]];
-      updated.splice(index, 1);
-      return { ...prev, [qid]: updated };
-    });
+  // //Remove uploaded image
+  // const removeImage = (qid, idx) => {
+  //   setUploadedImages((prev) => {
+  //     const updatedImages = [...prev[qid]];
+  //     updatedImages.splice(idx, 1);
+  //     return { ...prev, [qid]: updatedImages };
+  //   });
+  // }
+
+  const removePendingImage = (qid, idx) => {
+  setPendingUploads((prev) => {
+    const updated = [...(prev[qid] || [])];
+    updated.splice(idx, 1);
+    return { ...prev, [qid]: updated };
+  });
+};
+
+  // Cancel device upload
+  const handleCancelUpload = (qid) => {
+    setPendingUploads((prev) => ({ ...prev, [qid]: [] }));
+    setUploadComplete(false);
+    closeUploadModal();
   };
 
-  // // Generate QR data for a specific question
-  // const generateQRData = (question) => {
-  //   // Create a unique identifier for this question
-  //   const qrData = {
-  //     questionId: question.question_id,
-  //     examId: questionPaperData.exam_details?.exam_id || "unknown",
-  //     sectionId: question.section?.assessment_section_id || "unknown",
-  //     timestamp: Date.now(),
-  //     // This URL would be handled by your mobile app to open the camera
-  //     action: "capture-answer"
-  //   };
-    
-  //   return JSON.stringify(qrData);
-  // };
-
+  // Upload device images for a question
+  const handleUploadImages = async (qid) => {
+    console.log("Uploading images for question:", qid);
+    setUploading(true);
+    try {
+      const token =
+        "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5MTkxMTI3NjcyNzYiLCJ0b2tlblZlcnNpb24iOjE3NTU1OTQ0MTU4MTI3MTg4LCJpYXQiOjE3NTU3Njk5OTIsImV4cCI6MzUxMTUzNTA2NX0.o5phxoftx3ZfYj5Hj2Zx3dSe72_UncoNoEAHsvmagOs";
+      const files = pendingUploads[qid];
+      const userAnswerId = userAnswerIds[qid];
+      console.log(
+        "Uploading files for question:",
+        qid,
+        "User Answer ID:",
+        userAnswerId,
+        "token",
+        token
+      );
+      let newImageUrls = [];
+      for (let file of files) {
+        const formData = new FormData();
+        formData.append("userAnswerId", userAnswerId);
+        formData.append("userAnswerImages", file);
+        // Replace with your actual API endpoint
+        const res = await axios.post(
+          "https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer",
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+        if (res.status === 200) {
+          console.log("Upload successful :", res);
+          setUploadedStatus((prev) => ({ ...prev, [qid]: "uploaded" }));
+          setUploadModal({ open: false, qid: null, section: null });
+          setShowCamera(false);
+          setShowQR(false);
+          setCapturedImage(null);
+          setUploadComplete(false);
+          setQrData(null);
+        }
+        // If your API returns the uploaded image URL, use it. Otherwise, use local preview.
+        if (res.data?.imageUrl) {
+          newImageUrls.push(res.data.imageUrl);
+        } else {
+          newImageUrls.push(URL.createObjectURL(file));
+        }
+      }
+      setUploadedImages((prev) => ({
+        ...prev,
+        [qid]: [...(prev[qid] || []), ...newImageUrls],
+      }));
+      setPendingUploads((prev) => ({ ...prev, [qid]: [] }));
+      setUploadComplete(false);
+      closeUploadModal();
+    } catch (err) {
+      alert("Upload failed. Please try again.");
+      console.error("Upload error:", err);
+    }
+    setUploading(false);
+  };
   // Generate QR data for a specific question
-const generateQRData = (question) => {
-  // Create a URL that points to your camera instruction page
-  const cameraUrl = `${window.location.origin}/camera-instructions?questionId=${question.question_id}&examId=${questionPaperData.exam_details?.exam_id || "unknown"}&sectionId=${question.section?.assessment_section_id || "unknown"}`;
-  
-  return cameraUrl;
-};
+  const generateQRData = (question) => {
+    // Create a URL that points to your camera instruction page
+    const cameraUrl = `${
+      window.location.origin
+    }/camera-instructions?questionId=${question.question_id}&examId=${
+      questionPaperData.exam_details?.exam_id || "unknown"
+    }&sectionId=${question.section?.assessment_section_id || "unknown"}`;
+
+    return cameraUrl;
+  };
 
   // Handle QR option selection
   const handleQROption = (question) => {
@@ -140,15 +250,15 @@ const generateQRData = (question) => {
   };
 
   const getAnswerDisplay = (q, idx) => {
-    if (q.question_type_name === "MCQ") {
+    if (q.question_type_name === "MCQ1") {
       const options = [
         q.option1_latex,
         q.option2_latex,
         q.option3_latex,
         q.option4_latex,
         q.option5_latex,
-      ].filter(opt => opt !== null && opt !== undefined);
-      
+      ].filter((opt) => opt !== null && opt !== undefined);
+
       return (
         <div className="flex flex-col gap-2 mt-2">
           {options.map((opt, optIdx) => (
@@ -161,13 +271,15 @@ const generateQRData = (question) => {
                 onChange={() => handleMcqChange(q.question_id, optIdx)}
                 className="h-4 w-4 text-blue-600"
               />
-              <span>{String.fromCharCode(65 + optIdx)}) {opt}</span>
+              <span>
+                {String.fromCharCode(65 + optIdx)}) {opt}
+              </span>
             </label>
           ))}
         </div>
       );
     }
-    
+
     if (q.question_type_name === "True/False") {
       return (
         <div className="flex gap-4 mt-2">
@@ -196,7 +308,7 @@ const generateQRData = (question) => {
         </div>
       );
     }
-    
+
     if (q.question_type_name === "Match the Following") {
       const getAlphabetPrefix = (idx) => String.fromCharCode(65 + idx);
       const rightItems = q.shuffle_options
@@ -209,10 +321,15 @@ const generateQRData = (question) => {
         <div className="mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div className="space-y-3">
-              <h4 className="font-semibold text-center bg-gray-100 py-2">Column A</h4>
+              <h4 className="font-semibold text-center bg-gray-100 py-2">
+                Column A
+              </h4>
               <ul className="space-y-2">
                 {q.match_pairs.map((pair, idx) => (
-                  <li key={`left-${idx}`} className="p-2 border rounded flex items-center">
+                  <li
+                    key={`left-${idx}`}
+                    className="p-2 border rounded flex items-center"
+                  >
                     <span className="mr-2 font-medium">{idx + 1}.</span>
                     {pair.left}
                   </li>
@@ -220,18 +337,25 @@ const generateQRData = (question) => {
               </ul>
             </div>
             <div className="space-y-3">
-              <h4 className="font-semibold text-center bg-gray-100 py-2">Column B</h4>
+              <h4 className="font-semibold text-center bg-gray-100 py-2">
+                Column B
+              </h4>
               <ul className="space-y-2">
                 {rightItems.map((item, idx) => (
-                  <li key={`right-${idx}`} className="p-2 border rounded flex items-center">
-                    <span className="mr-2 font-medium">{getAlphabetPrefix(idx)}.</span>
+                  <li
+                    key={`right-${idx}`}
+                    className="p-2 border rounded flex items-center"
+                  >
+                    <span className="mr-2 font-medium">
+                      {getAlphabetPrefix(idx)}.
+                    </span>
                     {item}
                   </li>
                 ))}
               </ul>
             </div>
           </div>
-          
+
           {/* Input boxes for matching at the bottom */}
           <div className="mt-4">
             <h4 className="font-semibold mb-2">Your Answers:</h4>
@@ -244,7 +368,12 @@ const generateQRData = (question) => {
                     placeholder="Enter letter"
                     className="w-full px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
                     value={matchAnswers[`${q.question_id}_${idx}`] || ""}
-                    onChange={(e) => handleMatchChange(`${q.question_id}_${idx}`, e.target.value)}
+                    onChange={(e) =>
+                      handleMatchChange(
+                        `${q.question_id}_${idx}`,
+                        e.target.value
+                      )
+                    }
                   />
                 </div>
               ))}
@@ -253,50 +382,118 @@ const generateQRData = (question) => {
         </div>
       );
     }
-    
+
     // For theory or other types
     return (
       <div className="mt-2">
-        <button
-          className="px-4 py-1 bg-gradient-to-r from-green-400 to-blue-500 text-white rounded shadow hover:scale-105 transition"
-          onClick={() => setUploadModal({ open: true, qid: q.question_id, section: q.section })}
-        >
-          Upload Answer
-        </button>
-        
-        {/* Show uploaded images preview */}
-        {uploadedImages[q.question_id] && uploadedImages[q.question_id].length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {uploadedImages[q.question_id].map((img, idx) => (
-              <div key={idx} className="relative">
-                <img src={img} alt={`Upload ${idx + 1}`} className="w-16 h-16 object-cover rounded border" />
-                <button
-                  onClick={() => removeImage(q.question_id, idx)}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
+        {uploadedStatus[q.question_id] === "uploaded" ? (
+          <button
+            className="px-4 py-1 bg-gray-400 text-white rounded shadow cursor-not-allowed"
+            disabled
+          >
+            Uploaded
+          </button>
+        ) : (
+          <button
+            className="px-4 py-1 bg-gradient-to-r from-green-400 to-blue-500 text-white rounded shadow hover:scale-105 transition"
+            onClick={() =>
+              setUploadModal({
+                open: true,
+                qid: q.question_id,
+                section: q.section,
+              })
+            }
+          >
+            Upload Answer
+          </button>
         )}
+
+        {/* Show uploaded images preview */}
+        {/* {uploadedImages[q.question_id] &&
+          uploadedImages[q.question_id].length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {uploadedImages[q.question_id].map((img, idx) => (
+                <img
+                  key={idx}
+                  src={img}
+                  alt={`Uploaded ${idx + 1}`}
+                  className="w-16 h-16 object-cover rounded border"
+                />
+              ))}
+            </div>
+          )} */}
       </div>
     );
   };
 
-  const handleFinalSubmit = () => {
-    // Combine all answers
-    const finalAnswers = {
-      ...mcqAnswers,
-      ...tfAnswers,
-      ...matchAnswers,
-      ...uploadedImages
-    };
-    
-    // Here you would typically send the answers to your backend
-    console.log("Final answers:", finalAnswers);
-    alert("Answers submitted successfully!");
-    navigate("/");
+  // Final submit: call API for all questions
+  const handleFinalSubmit = async () => {
+    setUploading(true);
+    try {
+      // MCQ/TF/Match
+      for (const qid in userAnswerIds) {
+        const user_answer_id = userAnswerIds[qid];
+        // MCQ
+        if (mcqAnswers[qid] !== undefined) {
+          await axios.post(
+            "https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer",
+            {
+              userAnswerId: user_answer_id,
+              value: mcqAnswers[qid],
+            }
+          );
+        }
+        // True/False
+        else if (tfAnswers[qid] !== undefined) {
+          await axios.post(
+            "https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer",
+            {
+              userAnswerId: user_answer_id,
+              value: tfAnswers[qid],
+            }
+          );
+        }
+        // Match the Following
+        else if (Object.keys(matchAnswers).some((k) => k.startsWith(qid))) {
+          // Send all match values for this question as needed by your API
+          // Example: { answerid, value: { 0: "A", 1: "B", ... } }
+          const matchObj = {};
+          Object.keys(matchAnswers).forEach((k) => {
+            if (k.startsWith(qid)) {
+              const idx = k.split("_")[1];
+              matchObj[idx] = matchAnswers[k];
+            }
+          });
+          await axios.post(
+            "https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer",
+            {
+              answerid: user_answer_id,
+              value: matchObj,
+            }
+          );
+        }
+        // Theory with images
+        if (pendingUploads[qid] && pendingUploads[qid].length > 0) {
+          for (let file of pendingUploads[qid]) {
+            const formData = new FormData();
+            formData.append("userAnswerId", user_answer_id);
+            formData.append("image", file);
+            await axios.post(
+              "https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer",
+              formData,
+              {
+                headers: { "Content-Type": "multipart/form-data" },
+              }
+            );
+          }
+        }
+      }
+      alert("All answers submitted!");
+      navigate("/");
+    } catch (err) {
+      alert("Submission failed. Please try again.");
+    }
+    setUploading(false);
   };
 
   const closeUploadModal = () => {
@@ -320,7 +517,7 @@ const generateQRData = (question) => {
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-4 sm:p-8 flex flex-col items-center font-inter text-gray-800"
@@ -332,23 +529,30 @@ const generateQRData = (question) => {
         className="bg-white p-6 sm:p-10 rounded-lg shadow-2xl w-full max-w-4xl border border-gray-200 mb-4 hover:shadow-blue-100 transition-all duration-300"
       >
         {/* Header section with enhanced styling */}
-        <motion.div 
+        <motion.div
           initial={{ y: -20 }}
           animate={{ y: 0 }}
           className="text-center mb-8 pb-4 border-b border-gray-200"
         >
           <p className="font-bold text-lg sm:text-xl md:text-2xl mb-1 text-gray-900 hover:text-blue-700 transition-colors">
-            {questionPaperData.exam_details.board.replace(/\\/g, '')}
+            {/* {questionPaperData.exam_details.board.replace(/\\/g, '')} */}
           </p>
           <p className="font-bold text-base sm:text-lg md:text-xl mb-1 text-gray-800">
-            {questionPaperData.exam_details.examination}
+            {/* {questionPaperData.exam_details.examination} */}
+            {questionPaperData.assessment_name || "Examination Name"}
           </p>
           <p className="font-bold text-sm sm:text-base md:text-lg mb-4 text-gray-700">
-            {questionPaperData.exam_details.class}
+            {/* {questionPaperData.exam_details.class} */}
           </p>
           <div className="flex justify-between items-center text-sm sm:text-base mb-8 px-4">
-            <p className="text-gray-600">Time: {questionPaperData.exam_details.time_allowed}</p>
-            <p className="text-gray-600">Max. Marks: {questionPaperData.exam_details.max_marks}</p>
+            {/* <p className="text-gray-600">Time: {questionPaperData.exam_details.time_allowed || "30"}</p> */}
+            <p className="text-gray-600">
+              Time: {questionPaperData.total_tim || "30"}
+            </p>
+            {/* <p className="text-gray-600">Max. Marks: {questionPaperData.exam_details.max_marks || "80"}</p> */}
+            <p className="text-gray-600">
+              Max. Marks: {questionPaperData.total_marks || "80"}
+            </p>
           </div>
           <h1 className="font-extrabold text-xl sm:text-2xl md:text-3xl tracking-wide text-blue-700 uppercase">
             Review Your Answers
@@ -375,7 +579,9 @@ const generateQRData = (question) => {
                     key={q.question_id}
                     className="p-4 rounded-lg border shadow-sm bg-gradient-to-r from-white to-blue-50"
                   >
-                    <div className="font-semibold text-black text-left">Q{idx + 1}: {q.question_latex}</div>
+                    <div className="font-semibold text-black text-left">
+                      Q{idx + 1}: {q.question_latex}
+                    </div>
                     {getAnswerDisplay({ ...q, section }, idx)}
                   </div>
                 ))}
@@ -393,10 +599,11 @@ const generateQRData = (question) => {
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={handleFinalSubmit}
+          // onClick={handleFinalSubmit}
+          disabled={uploading}
           className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg shadow-lg font-bold text-lg transition-all duration-300"
         >
-          Submit All Answers
+          {uploading ? "Submitting..." : "Submit All Answers"}
         </motion.button>
       </motion.div>
 
@@ -411,29 +618,36 @@ const generateQRData = (question) => {
               &times;
             </button>
             <h3 className="text-lg font-bold mb-4 text-blue-700">
-              Upload Answer for Section {uploadModal.section?.section_number}: {uploadModal.section?.section_heading}
+              Upload Answer for Section {uploadModal.section?.section_number}:{" "}
+              {uploadModal.section?.section_heading}
             </h3>
-            
+
             {/* Show already uploaded images */}
-            {uploadedImages[uploadModal.qid] && uploadedImages[uploadModal.qid].length > 0 && (
-              <div className="mb-4">
-                <h4 className="font-medium mb-2">Uploaded Images:</h4>
-                <div className="flex flex-wrap gap-2">
-                  {uploadedImages[uploadModal.qid].map((img, idx) => (
-                    <div key={idx} className="relative">
-                      <img src={img} alt={`Upload ${idx + 1}`} className="w-16 h-16 object-cover rounded border" />
-                      <button
-                        onClick={() => removeImage(uploadModal.qid, idx)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
+            {uploadedImages[uploadModal.qid] &&
+              uploadedImages[uploadModal.qid].length > 0 && (
+                <div className="mb-4">
+                  <h4 className="font-medium mb-2">Uploaded Images:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {uploadedImages[uploadModal.qid].map((img, idx) => (
+                      <div key={idx} className="relative">
+                        <img
+                          src={img}
+                          alt={`Upload ${idx + 1}`}
+                          className="w-16 h-16 object-cover rounded border"
+                        />
+                        <button
+                          // onClick={() => removeImage(uploadModal.qid, idx)}
+                           onClick={() => removePendingImage(uploadModal.qid, idx)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-            
+              )}
+
             <div className="space-y-4">
               {/* QR Code Display */}
               {/* {showQR && qrData && (
@@ -457,30 +671,32 @@ const generateQRData = (question) => {
                   </button>
                 </div>
               )} */}
-             {showQR && qrData && (
-  <div className="flex flex-col items-center space-y-4">
-    <h4 className="font-medium text-center">Scan this QR code with your phone</h4>
-    <QRCodeSVG
-      value={qrData}
-      size={200}
-      level="H"
-      includeMargin={true}
-      className="border border-gray-200 p-2 rounded"
-    />
-    <div className="text-sm text-gray-600 text-center">
-      <p>1. Open your phone's camera app</p>
-      <p>2. Point it at this QR code</p>
-      <p>3. Tap the link that appears</p>
-      <p>4. Follow the instructions to capture your answer</p>
-    </div>
-    <button
-      className="w-full px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg shadow hover:scale-105 transition"
-      onClick={closeUploadModal}
-    >
-      Done
-    </button>
-  </div>
-)}
+              {showQR && qrData && (
+                <div className="flex flex-col items-center space-y-4">
+                  <h4 className="font-medium text-center">
+                    Scan this QR code with your phone
+                  </h4>
+                  <QRCodeSVG
+                    value={qrData}
+                    size={200}
+                    level="H"
+                    includeMargin={true}
+                    className="border border-gray-200 p-2 rounded"
+                  />
+                  <div className="text-sm text-gray-600 text-center">
+                    <p>1. Open your phone's camera app</p>
+                    <p>2. Point it at this QR code</p>
+                    <p>3. Tap the link that appears</p>
+                    <p>4. Follow the instructions to capture your answer</p>
+                  </div>
+                  <button
+                    className="w-full px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg shadow hover:scale-105 transition"
+                    onClick={closeUploadModal}
+                  >
+                    Done
+                  </button>
+                </div>
+              )}
 
               {/* Camera View */}
               {showCamera && !uploadComplete && (
@@ -508,15 +724,22 @@ const generateQRData = (question) => {
                     </>
                   ) : (
                     <>
-                      <img src={capturedImage} alt="Captured" className="w-40 h-40 object-contain rounded shadow" />
+                      <img
+                        src={capturedImage}
+                        alt="Captured"
+                        className="w-40 h-40 object-contain rounded shadow"
+                      />
                       <button
                         className="px-4 py-2 bg-green-500 text-white rounded shadow"
                         onClick={() => {
                           // Add the captured image to uploaded images
                           if (uploadModal.qid) {
-                            setUploadedImages(prev => ({
+                            setUploadedImages((prev) => ({
                               ...prev,
-                              [uploadModal.qid]: [...(prev[uploadModal.qid] || []), capturedImage]
+                              [uploadModal.qid]: [
+                                ...(prev[uploadModal.qid] || []),
+                                capturedImage,
+                              ],
                             }));
                           }
                           setCapturedImage(null);
@@ -537,10 +760,12 @@ const generateQRData = (question) => {
                     <button
                       key={opt.value}
                       className="w-full px-4 py-2 bg-gradient-to-r from-blue-400 to-indigo-500 text-white rounded-lg shadow hover:scale-105 transition"
-                      onClick={() => handleUploadOption(opt, { 
-                        question_id: uploadModal.qid, 
-                        section: uploadModal.section 
-                      })}
+                      onClick={() =>
+                        handleUploadOption(opt, {
+                          question_id: uploadModal.qid,
+                          section: uploadModal.section,
+                        })
+                      }
                     >
                       {opt.label}
                     </button>
@@ -557,13 +782,93 @@ const generateQRData = (question) => {
               )}
 
               {/* Done button after upload (only for device uploads) */}
-              {uploadComplete && !showQR && !showCamera && (
-                <button
-                  className="w-full px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg shadow hover:scale-105 transition"
-                  onClick={closeUploadModal}
-                >
-                  Done
-                </button>
+              {/* {uploadComplete && !showQR && !showCamera && (
+                <div>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {pendingUploads[uploadModal.qid].map((file, idx) => (
+                      <img
+                        key={idx}
+                        src={URL.createObjectURL(file)}
+                        alt={`Preview ${idx + 1}`}
+                        className="w-20 h-20 object-cover rounded border"
+                      />
+                    ))}
+                  </div>
+                  <div className="flex gap-4">
+                    <button
+                      className="px-4 py-2 bg-blue-600 text-white rounded shadow"
+                      onClick={() => handleUploadImages(uploadModal.qid)}
+                      disabled={uploading}
+                    >
+                      {uploading ? "Uploading..." : "Upload"}
+                    </button>
+                    <button
+                      className="px-4 py-2 bg-gray-400 text-white rounded shadow"
+                      onClick={() => handleCancelUpload(uploadModal.qid)}
+                      disabled={uploading}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )} */}
+              {uploadComplete && pendingUploads[uploadModal.qid] && (
+                <div>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <div className="flex flex-wrap gap-2">
+                    {pendingUploads[uploadModal.qid].map((file, idx) => (
+                      <div key={idx} className="relative">
+                        <img
+                         src={URL.createObjectURL(file)}
+                           alt={`Preview ${idx + 1}`}
+                          className="w-16 h-16 object-cover rounded border"
+                        />
+                        <button
+                          // onClick={() => removeImage(uploadModal.qid, idx)}
+                           onClick={() => removePendingImage(uploadModal.qid, idx)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                    {/* {pendingUploads[uploadModal.qid].map((file, idx) => (
+                      <img
+                        key={idx}
+                        src={URL.createObjectURL(file)}
+                        alt={`Preview ${idx + 1}`}
+                        className="w-20 h-20 object-cover rounded border"
+                      />
+                    ))} */}
+                    
+                  </div>
+                  <div className="flex gap-4">
+                    {uploadedImages[uploadModal.qid] &&
+                    uploadedImages[uploadModal.qid].length > 0 ? (
+                      <span className="px-4 py-2 bg-green-500 text-white rounded shadow flex items-center">
+                        Uploaded
+                      </span>
+                    ) : (
+                      <>
+                        <button
+                          className="px-4 py-2 bg-blue-600 text-white rounded shadow"
+                          onClick={() => handleUploadImages(uploadModal.qid)}
+                          disabled={uploading}
+                        >
+                          {uploading ? "Uploading..." : "Upload"}
+                        </button>
+                        <button
+                          className="px-4 py-2 bg-gray-400 text-white rounded shadow"
+                          onClick={() => handleCancelUpload(uploadModal.qid)}
+                          disabled={uploading}
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           </div>
