@@ -80,10 +80,16 @@ const CameraPage = () => {
       });
       
       // Upload to your server
-      const response = await fetch('/api/upload-answers', {
-        method: 'POST',
-        body: formData,
-      });
+     const res = await axios.post(
+          "https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer",
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
       
       if (response.ok) {
         alert('Images uploaded successfully!');
