@@ -268,7 +268,8 @@ const ReviewAnswers = () => {
     sectionHeading: section.section_heading,
     questionNumber: questionNumber,
   }));
-  setQrData(`${window.location.origin}/camera-instructions`);
+  // setQrData(`${window.location.origin}/camera-instructions`);
+  setQrData(`${window.location.origin}/#/camera-instructions`);
   setShowQR(true);
 };
 

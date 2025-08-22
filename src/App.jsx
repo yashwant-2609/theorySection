@@ -1,8 +1,6 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import {  Route, Routes } from 'react-router-dom'
 import Solutions from './Components/Solutions/Solutions'
 import UploadPage from './Components/Upload/Upload'
 import { TheoryExamScreen } from './Components/TheorySection/MultipleSections'
@@ -17,7 +15,7 @@ function App() {
 
   return (
     <>
-       <BrowserRouter>
+       {/* <BrowserRouter> */}
         <Routes>
           {/* <Route path="/" element={<Solutions />} /> */}
           {/* <Route path="/" element={<TheoryExamScreen />} /> */}
@@ -27,7 +25,7 @@ function App() {
           <Route path="/camera-instructions" element={<CameraInstructions />} />
 <Route path="/camera" element={<CameraPage />} />
         </Routes>
-      </BrowserRouter>
+      {/* </BrowserRouter> */}
     </>
   )
 }
