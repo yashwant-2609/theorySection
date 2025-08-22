@@ -236,7 +236,7 @@ const ReviewAnswers = () => {
     const cameraUrl = `${
       window.location.origin
     }/camera-instructions?questionId=${question.question_id}&examId=${
-      questionPaperData.exam_details?.exam_id || "unknown"
+      questionPaperData.assessment_id || "unknown"
     }&sectionId=${question.section?.assessment_section_id || "unknown"}`;
 
     return cameraUrl;
