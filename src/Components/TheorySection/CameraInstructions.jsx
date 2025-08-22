@@ -5,13 +5,13 @@ const CameraInstructions = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const questionId = searchParams.get('questionId');
-  const examId = searchParams.get('examId');
+  const assessmentId = searchParams.get('assessmentId');
   const sectionId = searchParams.get('sectionId');
-  console.log("CameraInstructions", { questionId, examId, sectionId });
+  console.log("CameraInstructions", { questionId, assessmentId, sectionId });
 
   const startCamera = () => {
     // Navigate to the camera page
-    navigate(`/camera?questionId=${questionId}&examId=${examId}&sectionId=${sectionId}`);
+    navigate(`/camera?questionId=${questionId}&assessmentId=${assessmentId}&sectionId=${sectionId}`);
   };
 
   return (

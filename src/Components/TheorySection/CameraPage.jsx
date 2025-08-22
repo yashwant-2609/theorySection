@@ -9,7 +9,7 @@ const CameraPage = () => {
   const [capturedImages, setCapturedImages] = useState([]);
   const [error, setError] = useState(null);
   const questionId = searchParams.get('questionId');
-  const examId = searchParams.get('examId');
+  const assessmentId = searchParams.get('assessmentId');
   const sectionId = searchParams.get('sectionId');
 
   useEffect(() => {
@@ -67,7 +67,7 @@ const CameraPage = () => {
       // Create FormData for upload
       const formData = new FormData();
       formData.append('questionId', questionId);
-      formData.append('examId', examId);
+      formData.append('assessmentId', assessmentId);
       formData.append('sectionId', sectionId);
       
       imageBlobs.forEach((blob, index) => {

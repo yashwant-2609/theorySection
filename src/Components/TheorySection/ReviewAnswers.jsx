@@ -235,7 +235,7 @@ const ReviewAnswers = () => {
     // Create a URL that points to your camera instruction page
     const cameraUrl = `${
       window.location.origin
-    }/camera-instructions?questionId=${question.question_id}&examId=${
+    }/camera-instructions?questionId=${question.question_id}&assessmentId=${
       questionPaperData.assessment_id || "unknown"
     }&sectionId=${question.section?.assessment_section_id || "unknown"}`;
 
