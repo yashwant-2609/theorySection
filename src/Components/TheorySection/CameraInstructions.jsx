@@ -14,6 +14,11 @@ const CameraInstructions = () => {
     navigate(`/camera?questionId=${questionId}&assessmentId=${assessmentId}&sectionId=${sectionId}`);
   };
 
+  const cameraInfo = JSON.parse(localStorage.getItem("cameraInfo") || "{}");
+  const sectionNumber = cameraInfo.sectionNumber;
+  const sectionHeading = cameraInfo.sectionHeading;
+  const questionNumber = cameraInfo.questionNumber;
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
@@ -39,6 +44,15 @@ const CameraInstructions = () => {
         <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
           <p className="text-yellow-800 text-sm">
             <strong>Note:</strong> You'll need to allow camera permissions when prompted.
+          </p>
+        </div>
+
+        <div className="mt-6">
+          <p className="text-center text-sm text-gray-500">
+            Section {sectionNumber}: {sectionHeading}
+          </p>
+          <p className="text-center text-sm text-gray-500">
+            Question {questionNumber}
           </p>
         </div>
       </div>

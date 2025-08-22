@@ -12,6 +12,11 @@ const CameraPage = () => {
   const assessmentId = searchParams.get('assessmentId');
   const sectionId = searchParams.get('sectionId');
 
+  const cameraInfo = JSON.parse(localStorage.getItem("cameraInfo") || "{}");
+  const sectionNumber = cameraInfo.sectionNumber;
+  const sectionHeading = cameraInfo.sectionHeading;
+  const questionNumber = cameraInfo.questionNumber;
+
   useEffect(() => {
     // Automatically start camera when component mounts
     startCamera();
@@ -100,7 +105,11 @@ const CameraPage = () => {
     <div className="min-h-screen bg-gray-100 p-4">
       <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-4">
         <h1 className="text-xl font-bold text-center mb-4">Capture Answer</h1>
-        <p className="text-center mb-4">Question ID: {questionId}</p>
+        {/* <p className="text-center mb-4">Question ID: {questionId}</p> */}
+        <p className="text-center mb-4">
+          Section {sectionNumber}: {sectionHeading} <br />
+          Question {questionNumber}
+        </p>
         
         {error ? (
           <div className="p-4 bg-red-100 border border-red-200 rounded-lg mb-4">

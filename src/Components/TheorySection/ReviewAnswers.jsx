@@ -242,10 +242,14 @@ const ReviewAnswers = () => {
     return cameraUrl;
   };
 
-  // Handle QR option selection
-  const handleQROption = (question) => {
-    const data = generateQRData(question);
-    setQrData(data);
+  // Before generating QR, store info in localStorage
+  const handleQROption = (question, section, questionNumber) => {
+    localStorage.setItem("cameraInfo", JSON.stringify({
+      sectionNumber: section.section_number,
+      sectionHeading: section.section_heading,
+      questionNumber: questionNumber,
+    }));
+    setQrData(`${window.location.origin}/camera-instructions`);
     setShowQR(true);
   };
 
@@ -677,7 +681,9 @@ const ReviewAnswers = () => {
                     Scan this QR code with your phone
                   </h4>
                   <QRCodeSVG
-                    value={qrData}
+                    // value={qrData}
+
+                    value={`${window.location.origin}/camera-instructions`}
                     size={200}
                     level="H"
                     includeMargin={true}
