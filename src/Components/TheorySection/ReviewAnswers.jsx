@@ -243,15 +243,34 @@ const ReviewAnswers = () => {
   };
 
   // Before generating QR, store info in localStorage
-  const handleQROption = (question, section, questionNumber) => {
-    localStorage.setItem("cameraInfo", JSON.stringify({
-      sectionNumber: section.section_number,
-      sectionHeading: section.section_heading,
-      questionNumber: questionNumber,
-    }));
-    setQrData(`${window.location.origin}/camera-instructions`);
-    setShowQR(true);
-  };
+  // const handleQROption = (question, section, questionNumber) => {
+  //   console.log("Stored cameraInfo in localStorage:", {
+  //     sectionNumber: section.section_number,
+  //     sectionHeading: section.section_heading,
+  //     questionNumber: questionNumber,
+  //   });
+  //   localStorage.setItem("cameraInfo", JSON.stringify({
+  //     sectionNumber: section.section_number,
+  //     sectionHeading: section.section_heading,
+  //     questionNumber: questionNumber,
+  //   }));
+  //   setQrData(`${window.location.origin}/camera-instructions`);
+  //   console.log("QR Data URL:", qrData);
+  //   setShowQR(true);
+  // };
+  const handleQROption = (qid, section, questionNumber) => {
+  if (!section) {
+    alert("Section information is missing!");
+    return;
+  }
+  localStorage.setItem("cameraInfo", JSON.stringify({
+    sectionNumber: section.section_number,
+    sectionHeading: section.section_heading,
+    questionNumber: questionNumber,
+  }));
+  setQrData(`${window.location.origin}/camera-instructions`);
+  setShowQR(true);
+};
 
   const getAnswerDisplay = (q, idx) => {
     if (q.question_type_name === "MCQ1") {
@@ -510,15 +529,24 @@ const ReviewAnswers = () => {
   };
 
   // Handle option selection in the upload modal
-  const handleUploadOption = (option, question) => {
-    if (option.value === "device") {
-      fileInputRef.current.click();
-    } else if (option.value === "camera") {
-      setShowCamera(true);
-    } else if (option.value === "qr") {
-      handleQROption(question);
-    }
-  };
+  // const handleUploadOption = (option, question) => {
+  //   if (option.value === "device") {
+  //     fileInputRef.current.click();
+  //   } else if (option.value === "camera") {
+  //     setShowCamera(true);
+  //   } else if (option.value === "qr") {
+  //     handleQROption(question);
+  //   }
+  // };
+  const handleUploadOption = (option, qid, section, questionNumber) => {
+  if (option.value === "device") {
+    fileInputRef.current.click();
+  } else if (option.value === "camera") {
+    setShowCamera(true);
+  } else if (option.value === "qr") {
+    handleQROption(qid, section, questionNumber);
+  }
+};
 
   return (
     <motion.div
@@ -681,9 +709,7 @@ const ReviewAnswers = () => {
                     Scan this QR code with your phone
                   </h4>
                   <QRCodeSVG
-                    // value={qrData}
-
-                    value={`${window.location.origin}/camera-instructions`}
+                    value={qrData}
                     size={200}
                     level="H"
                     includeMargin={true}
@@ -766,12 +792,9 @@ const ReviewAnswers = () => {
                     <button
                       key={opt.value}
                       className="w-full px-4 py-2 bg-gradient-to-r from-blue-400 to-indigo-500 text-white rounded-lg shadow hover:scale-105 transition"
-                      onClick={() =>
-                        handleUploadOption(opt, {
-                          question_id: uploadModal.qid,
-                          section: uploadModal.section,
-                        })
-                      }
+                     onClick={() =>
+  handleUploadOption(opt, uploadModal.qid, uploadModal.section, uploadModal.questionNumber)
+}
                     >
                       {opt.label}
                     </button>
