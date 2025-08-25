@@ -8,6 +8,7 @@ const CameraPage = () => {
   const [stream, setStream] = useState(null);
   const [capturedImages, setCapturedImages] = useState([]);
   const [error, setError] = useState(null);
+    const [cameraActive, setCameraActive] = useState(true);
   
   const questionId = searchParams.get('questionId');
   const assessmentId = searchParams.get('assessmentId');
@@ -183,6 +184,7 @@ const CameraPage = () => {
                 </button>
               </div>
             </div> */}
+            {/* <> */}
             {cameraActive && (
               <div className="camera-container mb-4">
                 <video
@@ -207,16 +209,16 @@ const CameraPage = () => {
                 </div>
               </div>
             )}
-            
+
             {capturedImages.length > 0 && (
               <div className="mt-4">
                 <h3 className="font-semibold mb-2">Captured Images ({capturedImages.length})</h3>
                 <div className="grid grid-cols-3 gap-2">
                   {capturedImages.map((img, index) => (
                     <div key={index} className="relative">
-                      <img 
-                        src={img} 
-                        alt={`Capture ${index + 1}`} 
+                      <img
+                        src={img}
+                        alt={`Capture ${index + 1}`}
                         className="w-full h-24 object-cover rounded border"
                       />
                       <button
@@ -228,12 +230,6 @@ const CameraPage = () => {
                     </div>
                   ))}
                 </div>
-                {/* <button 
-                  onClick={uploadImages}
-                  className="w-full mt-4 py-2 bg-green-600 text-white rounded font-semibold"
-                >
-                  Upload Images
-                </button> */}
                 <div className="flex justify-between mt-4">
                   <button
                     onClick={handleAddMore}
