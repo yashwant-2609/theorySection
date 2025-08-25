@@ -633,6 +633,7 @@ const ReviewAnswers = () => {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           // onClick={handleFinalSubmit}
+          onClick={() => navigate("/solutionpage")}
           disabled={uploading}
           className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg shadow-lg font-bold text-lg transition-all duration-300"
         >

@@ -8,6 +8,7 @@ import ReviewAnswers from './Components/TheorySection/ReviewAnswers'
 import CameraInstructions from './Components/TheorySection/CameraInstructions'
 import CameraPage from './Components/TheorySection/CameraPage'
 import { API_TheoryPaper } from './Components/TheorySection/API_TheoryPaper'
+import SolutionPage from './Components/Solutions/TheorySolution'
 // import { TheoryExamScreen } from './Components/TheorySection/TheoryExamScreen'
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
           <Route path="/review-answers" element={<ReviewAnswers />} />
           <Route path="/camera-instructions" element={<CameraInstructions />} />
 <Route path="/camera" element={<CameraPage />} />
+          <Route path="/solutionpage" element={<SolutionPage />} />
         </Routes>
       {/* </BrowserRouter> */}
     </>

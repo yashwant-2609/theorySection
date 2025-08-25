@@ -8,6 +8,7 @@ const CameraPage = () => {
   const [stream, setStream] = useState(null);
   const [capturedImages, setCapturedImages] = useState([]);
   const [error, setError] = useState(null);
+  
   const questionId = searchParams.get('questionId');
   const assessmentId = searchParams.get('assessmentId');
   const sectionId = searchParams.get('sectionId');
@@ -17,9 +18,16 @@ const CameraPage = () => {
   const sectionHeading = cameraInfo.sectionHeading;
   const questionNumber = cameraInfo.questionNumber;
 
-  useEffect(() => {
-    // Automatically start camera when component mounts
+  // useEffect(() => {
+  //   // Automatically start camera when component mounts
+  //   startCamera();
+  // }, []);
+
+    useEffect(() => {
     startCamera();
+    // Cleanup on unmount
+    return () => stopCamera();
+    // eslint-disable-next-line
   }, []);
 
   const startCamera = async () => {
@@ -28,7 +36,12 @@ const CameraPage = () => {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'environment' } // Use rear camera
       });
-      setStream(mediaStream);
+      // setStream(mediaStream);
+      // if (videoRef.current) {
+      //   videoRef.current.srcObject = mediaStream;
+      // }
+       setStream(mediaStream);
+      setCameraActive(true);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
       }
@@ -51,12 +64,31 @@ const CameraPage = () => {
     }
   };
 
-  const stopCamera = () => {
+  // const stopCamera = () => {
+  //   if (stream) {
+  //     stream.getTracks().forEach(track => track.stop());
+  //     setStream(null);
+  //   }
+  // };
+    const stopCamera = () => {
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
       setStream(null);
     }
+    setCameraActive(false);
   };
+
+    const handleAddMore = () => {
+    // Camera stays open, just allow another capture
+  };
+
+    const handleCancel = () => {
+    setCapturedImages([]);
+    setError(null);
+    setCameraActive(true);
+    startCamera();
+  };
+
 
   const uploadImages = async () => {
     // Implement upload logic to your server
@@ -129,7 +161,7 @@ const CameraPage = () => {
           </div>
         ) : (
           <>
-            <div className="camera-container mb-4">
+            {/* <div className="camera-container mb-4">
               <video 
                 ref={videoRef} 
                 autoPlay 
@@ -150,7 +182,31 @@ const CameraPage = () => {
                   Stop Camera
                 </button>
               </div>
-            </div>
+            </div> */}
+            {cameraActive && (
+              <div className="camera-container mb-4">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  className="w-full h-[480px] object-cover rounded-lg border" // Increased height
+                />
+                <div className="flex justify-center mt-2 space-x-2">
+                  <button
+                    onClick={captureImage}
+                    className="px-4 py-2 bg-blue-600 text-white rounded"
+                  >
+                    Capture
+                  </button>
+                  <button
+                    onClick={stopCamera}
+                    className="px-4 py-2 bg-gray-600 text-white rounded"
+                  >
+                    Stop Camera
+                  </button>
+                </div>
+              </div>
+            )}
             
             {capturedImages.length > 0 && (
               <div className="mt-4">
@@ -172,12 +228,33 @@ const CameraPage = () => {
                     </div>
                   ))}
                 </div>
-                <button 
+                {/* <button 
                   onClick={uploadImages}
                   className="w-full mt-4 py-2 bg-green-600 text-white rounded font-semibold"
                 >
                   Upload Images
-                </button>
+                </button> */}
+                <div className="flex justify-between mt-4">
+                  <button
+                    onClick={handleAddMore}
+                    className="px-4 py-2 bg-blue-500 text-white rounded"
+                    disabled={!cameraActive}
+                  >
+                    Add More
+                  </button>
+                  <button
+                    onClick={uploadImages}
+                    className="px-4 py-2 bg-green-600 text-white rounded font-semibold"
+                  >
+                    Upload
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    className="px-4 py-2 bg-gray-400 text-white rounded"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             )}
           </>
