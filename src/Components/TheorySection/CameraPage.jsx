@@ -231,13 +231,13 @@ const CameraPage = () => {
                   ))}
                 </div>
                 <div className="flex justify-between mt-4">
-                  <button
+                  {/* <button
                     onClick={handleAddMore}
                     className="px-4 py-2 bg-blue-500 text-white rounded"
                     disabled={!cameraActive}
                   >
                     Add More
-                  </button>
+                  </button> */}
                   <button
                     onClick={uploadImages}
                     className="px-4 py-2 bg-green-600 text-white rounded font-semibold"

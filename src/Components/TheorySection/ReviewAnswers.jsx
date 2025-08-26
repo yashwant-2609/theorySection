@@ -84,31 +84,31 @@ const ReviewAnswers = () => {
   }, [answers, questionPaperData]);
 
   useEffect(() => {
-  if (!userAnswerIds) return;
-  
+    if (!userAnswerIds) return;
 
-  const fetchUploadStatus = async () => {
-    const statusObj = {};
-    for (const qid in userAnswerIds) {
-      const user_answer_id = userAnswerIds[qid];
-      try {
-        const res = await axios.get(
-          `https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/get?user_answer_id=${user_answer_id}`
-        );
-        // If user_answer is not null, mark as uploaded
-        if (res.data && res.data.user_answer) {
-          statusObj[qid] = "uploaded";
+
+    const fetchUploadStatus = async () => {
+      const statusObj = {};
+      for (const qid in userAnswerIds) {
+        const user_answer_id = userAnswerIds[qid];
+        try {
+          const res = await axios.get(
+            `https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/get?user_answer_id=${user_answer_id}`
+          );
+          // If user_answer is not null, mark as uploaded
+          if (res.data && res.data.user_answer) {
+            statusObj[qid] = "uploaded";
+          }
+        } catch (err) {
+          // Optionally handle error
         }
-      } catch (err) {
-        // Optionally handle error
       }
-    }
-    setUploadedStatus((prev) => ({ ...prev, ...statusObj }));
-  };
+      setUploadedStatus((prev) => ({ ...prev, ...statusObj }));
+    };
 
-  fetchUploadStatus();
-  // eslint-disable-next-line
-}, [userAnswerIds]);
+    fetchUploadStatus();
+    // eslint-disable-next-line
+  }, [userAnswerIds]);
 
   if (!answers || !questionPaperData) {
     return (
@@ -137,9 +137,10 @@ const ReviewAnswers = () => {
     if (files.length > 0 && uploadModal.qid) {
       setPendingUploads((prev) => ({
         ...prev,
-        [uploadModal.qid]: files,
+        // [uploadModal.qid]: files,
+          [uploadModal.qid]: [...(prev[uploadModal.qid] || []), ...files], // <-- This adds to the array!
       }));
-      setUploadComplete(true);
+      setUploadComplete(false);
     }
   };
 
@@ -153,12 +154,12 @@ const ReviewAnswers = () => {
   // }
 
   const removePendingImage = (qid, idx) => {
-  setPendingUploads((prev) => {
-    const updated = [...(prev[qid] || [])];
-    updated.splice(idx, 1);
-    return { ...prev, [qid]: updated };
-  });
-};
+    setPendingUploads((prev) => {
+      const updated = [...(prev[qid] || [])];
+      updated.splice(idx, 1);
+      return { ...prev, [qid]: updated };
+    });
+  };
 
   // Cancel device upload
   const handleCancelUpload = (qid) => {
@@ -233,11 +234,9 @@ const ReviewAnswers = () => {
   // Generate QR data for a specific question
   const generateQRData = (question) => {
     // Create a URL that points to your camera instruction page
-    const cameraUrl = `${
-      window.location.origin
-    }/camera-instructions?questionId=${question.question_id}&assessmentId=${
-      questionPaperData.assessment_id || "unknown"
-    }&sectionId=${question.section?.assessment_section_id || "unknown"}`;
+    const cameraUrl = `${window.location.origin
+      }/camera-instructions?questionId=${question.question_id}&assessmentId=${questionPaperData.assessment_id || "unknown"
+      }&sectionId=${question.section?.assessment_section_id || "unknown"}`;
 
     return cameraUrl;
   };
@@ -259,19 +258,19 @@ const ReviewAnswers = () => {
   //   setShowQR(true);
   // };
   const handleQROption = (qid, section, questionNumber) => {
-  if (!section) {
-    alert("Section information is missing!");
-    return;
-  }
-  localStorage.setItem("cameraInfo", JSON.stringify({
-    sectionNumber: section.section_number,
-    sectionHeading: section.section_heading,
-    questionNumber: questionNumber,
-  }));
-  // setQrData(`${window.location.origin}/camera-instructions`);
-  setQrData(`${window.location.origin}/#/camera-instructions`);
-  setShowQR(true);
-};
+    if (!section) {
+      alert("Section information is missing!");
+      return;
+    }
+    localStorage.setItem("cameraInfo", JSON.stringify({
+      sectionNumber: section.section_number,
+      sectionHeading: section.section_heading,
+      questionNumber: questionNumber,
+    }));
+    // setQrData(`${window.location.origin}/camera-instructions`);
+    setQrData(`${window.location.origin}/#/camera-instructions`);
+    setShowQR(true);
+  };
 
   const getAnswerDisplay = (q, idx) => {
     if (q.question_type_name === "MCQ1") {
@@ -337,8 +336,8 @@ const ReviewAnswers = () => {
       const getAlphabetPrefix = (idx) => String.fromCharCode(65 + idx);
       const rightItems = q.shuffle_options
         ? [...q.match_pairs]
-            .sort(() => Math.random() - 0.5)
-            .map((pair) => pair.right)
+          .sort(() => Math.random() - 0.5)
+          .map((pair) => pair.right)
         : q.match_pairs.map((pair) => pair.right);
 
       return (
@@ -529,6 +528,10 @@ const ReviewAnswers = () => {
     setQrData(null);
   };
 
+  const handleAddMore = () => {
+    // Camera stays open, just allow another capture
+  };
+
   // Handle option selection in the upload modal
   // const handleUploadOption = (option, question) => {
   //   if (option.value === "device") {
@@ -540,14 +543,14 @@ const ReviewAnswers = () => {
   //   }
   // };
   const handleUploadOption = (option, qid, section, questionNumber) => {
-  if (option.value === "device") {
-    fileInputRef.current.click();
-  } else if (option.value === "camera") {
-    setShowCamera(true);
-  } else if (option.value === "qr") {
-    handleQROption(qid, section, questionNumber);
-  }
-};
+    if (option.value === "device") {
+      fileInputRef.current.click();
+    } else if (option.value === "camera") {
+      setShowCamera(true);
+    } else if (option.value === "qr") {
+      handleQROption(qid, section, questionNumber);
+    }
+  };
 
   return (
     <motion.div
@@ -671,7 +674,7 @@ const ReviewAnswers = () => {
                         />
                         <button
                           // onClick={() => removeImage(uploadModal.qid, idx)}
-                           onClick={() => removePendingImage(uploadModal.qid, idx)}
+                          onClick={() => removePendingImage(uploadModal.qid, idx)}
                           className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
                         >
                           ×
@@ -744,7 +747,57 @@ const ReviewAnswers = () => {
                     onChange={handleCapture}
                     multiple
                   />
-                  {!capturedImage ? (
+                  <p className="text-sm text-gray-600 text-center">
+                    Click the button below to open your device's camera
+                  </p>
+                  <button
+                    className="px-4 py-2 bg-blue-500 text-white rounded shadow"
+                    onClick={() => fileInputRef.current.click()}
+                  >
+                    {pendingUploads[uploadModal.qid]?.length > 0 ? "Add Image" : "Open Camera"}
+                  </button>
+                  {/* Preview all captured images */}
+                  {pendingUploads[uploadModal.qid] && pendingUploads[uploadModal.qid].length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {pendingUploads[uploadModal.qid].map((file, idx) => (
+                        <div key={idx} className="relative">
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={`Preview ${idx + 1}`}
+                            className="w-16 h-16 object-cover rounded border"
+                          />
+                          <button
+                            onClick={() => removePendingImage(uploadModal.qid, idx)}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Show Upload and Cancel only if at least one image is captured */}
+                  {pendingUploads[uploadModal.qid] && pendingUploads[uploadModal.qid].length > 0 && (
+                    <div className="flex gap-4 mt-2">
+                      <button
+                        className="px-4 py-2 bg-blue-600 text-white rounded shadow"
+                        onClick={() => handleUploadImages(uploadModal.qid)}
+                        disabled={uploading}
+                      >
+                        {uploading ? "Uploading..." : "Upload"}
+                      </button>
+                      <button
+                        className="px-4 py-2 bg-gray-400 text-white rounded shadow"
+                        onClick={() => handleCancelUpload(uploadModal.qid)}
+                        disabled={uploading}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* {!capturedImage ? (
                     <>
                       <p className="text-sm text-gray-600 text-center">
                         Click the button below to open your device's camera
@@ -766,7 +819,6 @@ const ReviewAnswers = () => {
                       <button
                         className="px-4 py-2 bg-green-500 text-white rounded shadow"
                         onClick={() => {
-                          // Add the captured image to uploaded images
                           if (uploadModal.qid) {
                             setUploadedImages((prev) => ({
                               ...prev,
@@ -785,7 +837,7 @@ const ReviewAnswers = () => {
                     </>
                   )}
                 </div>
-              )}
+              )} */}
 
               {/* Upload Options (only show if not in QR or Camera mode) */}
               {!showQR && !showCamera && !uploadComplete && (
@@ -794,9 +846,9 @@ const ReviewAnswers = () => {
                     <button
                       key={opt.value}
                       className="w-full px-4 py-2 bg-gradient-to-r from-blue-400 to-indigo-500 text-white rounded-lg shadow hover:scale-105 transition"
-                     onClick={() =>
-  handleUploadOption(opt, uploadModal.qid, uploadModal.section, uploadModal.questionNumber)
-}
+                      onClick={() =>
+                        handleUploadOption(opt, uploadModal.qid, uploadModal.section, uploadModal.questionNumber)
+                      }
                     >
                       {opt.label}
                     </button>
@@ -847,23 +899,23 @@ const ReviewAnswers = () => {
                 <div>
                   <div className="flex flex-wrap gap-2 mb-4">
                     <div className="flex flex-wrap gap-2">
-                    {pendingUploads[uploadModal.qid].map((file, idx) => (
-                      <div key={idx} className="relative">
-                        <img
-                         src={URL.createObjectURL(file)}
-                           alt={`Preview ${idx + 1}`}
-                          className="w-16 h-16 object-cover rounded border"
-                        />
-                        <button
-                          // onClick={() => removeImage(uploadModal.qid, idx)}
-                           onClick={() => removePendingImage(uploadModal.qid, idx)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                      {pendingUploads[uploadModal.qid].map((file, idx) => (
+                        <div key={idx} className="relative">
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={`Preview ${idx + 1}`}
+                            className="w-16 h-16 object-cover rounded border"
+                          />
+                          <button
+                            // onClick={() => removeImage(uploadModal.qid, idx)}
+                            onClick={() => removePendingImage(uploadModal.qid, idx)}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                     {/* {pendingUploads[uploadModal.qid].map((file, idx) => (
                       <img
                         key={idx}
@@ -872,11 +924,11 @@ const ReviewAnswers = () => {
                         className="w-20 h-20 object-cover rounded border"
                       />
                     ))} */}
-                    
+
                   </div>
                   <div className="flex gap-4">
                     {uploadedImages[uploadModal.qid] &&
-                    uploadedImages[uploadModal.qid].length > 0 ? (
+                      uploadedImages[uploadModal.qid].length > 0 ? (
                       <span className="px-4 py-2 bg-green-500 text-white rounded shadow flex items-center">
                         Uploaded
                       </span>
