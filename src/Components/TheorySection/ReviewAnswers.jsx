@@ -251,10 +251,10 @@ const ReviewAnswers = () => {
   // Generate QR data for a specific question
   const generateQRData = (question) => {
     // Create a URL that points to your camera instruction page
-    const cameraUrl = `${window.location.origin
-      }/camera-instructions?questionId=${question.question_id}&assessmentId=${questionPaperData.assessment_id || "unknown"
-      }&sectionId=${question.section?.assessment_section_id || "unknown"}`;
-
+    // const cameraUrl = `${window.location.origin
+    //   }/camera-instructions?questionId=${question.question_id}&assessmentId=${questionPaperData.assessment_id || "unknown"
+    //   }&sectionId=${question.section?.assessment_section_id || "unknown"}`;
+    const cameraUrl = `${window.location.origin}/camera-instructions?questionId=${question.question_id}&userAnswerId=${userAnswerIds[question.question_id]}`;
     return cameraUrl;
   };
 

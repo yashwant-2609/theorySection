@@ -14,6 +14,7 @@ const CameraPage = () => {
   const questionId = searchParams.get('questionId');
   const assessmentId = searchParams.get('assessmentId');
   const sectionId = searchParams.get('sectionId');
+  const userAnswerId = searchParams.get('userAnswerId');
 
   const cameraInfo = JSON.parse(localStorage.getItem("cameraInfo") || "{}");
   const sectionNumber = cameraInfo.sectionNumber;
@@ -106,15 +107,24 @@ const CameraPage = () => {
       );
       
       // Create FormData for upload
-      const formData = new FormData();
-      formData.append('questionId', questionId);
-      formData.append('assessmentId', assessmentId);
-      formData.append('sectionId', sectionId);
+      // const formData = new FormData();
+      // formData.append('questionId', questionId);
+      // formData.append('assessmentId', assessmentId);
+      // formData.append('sectionId', sectionId);
       
-      imageBlobs.forEach((blob, index) => {
-        formData.append('images', blob, `answer-${index}.jpg`);
-      });
-      console.log("Parameter Data", questionId ,assessmentId,sectionId);
+      // imageBlobs.forEach((blob, index) => {
+      //   formData.append('images', blob, `answer-${index}.jpg`);
+      // });
+
+        for (let blob of imageBlobs) {
+      const formData = new FormData();
+      formData.append("userAnswerId", userAnswerId); // <-- Pass userAnswerId
+      formData.append("userAnswerImages", blob, "answer.jpg"); // <-- Pass image
+      formData.append("userAnswerText", null); // <-- Pass null
+      formData.append("answerUploadType", "ANSWER_IMAGE"); // <-- Pass type
+        }
+
+      console.log("Parameter Data", userAnswerId );
       console.log("form data", formData)
       // Upload to your server
      const res = await axios.post(

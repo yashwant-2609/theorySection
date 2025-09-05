@@ -7,11 +7,12 @@ const CameraInstructions = () => {
   const questionId = searchParams.get('questionId');
   const assessmentId = searchParams.get('assessmentId');
   const sectionId = searchParams.get('sectionId');
+  const userAnswerId = searchParams.get('userAnswerId');
   console.log("CameraInstructions", { questionId, assessmentId, sectionId });
 
   const startCamera = () => {
     // Navigate to the camera page
-    navigate(`/camera?questionId=${questionId}&assessmentId=${assessmentId}&sectionId=${sectionId}`);
+    navigate(`/camera?questionId=${questionId}&userAnswerId=${userAnswerId}`);
   };
 
   const cameraInfo = JSON.parse(localStorage.getItem("cameraInfo") || "{}");
