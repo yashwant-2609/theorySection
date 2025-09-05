@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Eye, MessageSquare, Loader2 } from 'lucide-react';
 import axios from 'axios';
+import { useLocation } from 'react-router-dom';
+// import useGlobalStore from '../../Store/globalStore';
 
-const SolutionPage = () => {
+const TheorySolution2 = () => {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showSolution, setShowSolution] = useState({});
   const [showFeedback, setShowFeedback] = useState({});
+  const location = useLocation();
+//   const user_ass_id =useGlobalStore.getState().userAssId || location.state?.user_ass_id;
 
   // Mock API call - replace with your actual API endpoint
   // const fetchSolutionData = async () => {
@@ -69,9 +73,11 @@ const SolutionPage = () => {
   const fetchSolutionData = async () => {
   try {
     const response = await axios.get(
-      `https://api-dev.mindshaala.com/api/v1/cil/assessment/solution/theory?user_ass_id=101120`
+    //   `https://api-dev.mindshaala.com/api/v1/cil/assessment/solution/theory?user_ass_id=${user_ass_id}`
+    `https://api-dev.mindshaala.com/api/v1/cil/assessment/solution/theory?user_ass_id=101119`
     );
     if (response.status === 200 && response.data && response.data.section_details) {
+      console.log("Response Data", response.data)
       // Flatten and map the data
       const questions = [];
       response.data.section_details.forEach((section) => {
@@ -92,6 +98,7 @@ const SolutionPage = () => {
               correctAnswer: getCorrectOptionLabel(q),
               attempted: q.attempt_status !== "NOT_VISITED",
               feedback: "No Feedback Available", // Set feedback as empty for now
+              description: q.answer_description || "No Description Available",
             });
           } else {
             questions.push({
@@ -230,6 +237,10 @@ function getCorrectOptionLabel(q) {
               </span>
             </div>
           </div>
+          <div className="flex ">
+            <span>{question.description}</span>
+          </div>
+
           
           {question.attempted && (
             <div className="flex items-center gap-2">
@@ -265,7 +276,7 @@ function getCorrectOptionLabel(q) {
           </div>
         </div>
 
-        {question.attempted && question.userAnswer && (
+        {question.userAnswer && (
           <div className="mb-6">
             <h4 className="text-sm font-semibold text-gray-600 mb-3">Your Answer:</h4>
             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
@@ -362,4 +373,4 @@ function getCorrectOptionLabel(q) {
   );
 };
 
-export default SolutionPage;
+export default TheorySolution2;

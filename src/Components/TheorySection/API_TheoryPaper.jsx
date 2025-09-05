@@ -46,11 +46,21 @@ const handleSubmit = () => {
     });
   });
 
+  // Calculate time_taken (in seconds)
+  const timeTaken = /* your logic to calculate time taken, e.g. */ 
+    (hours * 3600) + (minutes * 60) + seconds;
+
+  // Calculate ass_end_time (ISO string)
+  const assEndTime = new Date().toISOString();
+  // console.log("answers",answers,"questionPapaer Data",questionPaperData,"user answer id",userAnswerIds,"Time taken", timeTaken,"ass end time",assEndTime);
+
   navigate("/review-answers", { 
     state: { 
       answers, 
       questionPaperData, 
-      userAnswerIds // <-- pass this to next page
+      userAnswerIds,// <-- pass this to next page
+      time_taken: timeTaken,
+      ass_end_time: assEndTime,
     } 
   });
 };
@@ -74,7 +84,7 @@ const handleSubmit = () => {
 
   // API configuration
   const API_BASE_URL = "https://api-dev.mindshaala.com/api/v1/cil/assessment/fetch/theory?user_ass_id=101119";
-  const USER_ASS_ID = 101104;
+  // const USER_ASS_ID = 101104;
 
   const fetchQuestionDataFromApi = async () => {
     try {

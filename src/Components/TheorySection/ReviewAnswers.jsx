@@ -13,7 +13,7 @@ const uploadOptions = [
 
 const ReviewAnswers = () => {
   const { state } = useLocation();
-  const { answers, questionPaperData, userAnswerIds } = state || {};
+  const { answers, questionPaperData, userAnswerIds, time_taken,ass_end_time } = state || {};
   const [uploadModal, setUploadModal] = useState({
     open: false,
     qid: null,
@@ -33,7 +33,9 @@ const ReviewAnswers = () => {
   const fileInputRef = useRef();
   const navigate = useNavigate();
   const [uploadedStatus, setUploadedStatus] = useState({});
+  const [savedMcq, setSavedMcq] = useState({});
   // const [uploadedImages, setUploadedImages] = useState({});
+  const token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5MTkxMTI3NjcyNzYiLCJ0b2tlblZlcnNpb24iOjE3NTYzMTQyNzkxMTAxODk3LCJpYXQiOjE3NTY0ODk5MjgsImV4cCI6MzUxMzAxNzEwNX0.TgVE9qc5yztYw9g49mikqF2bueSi8-KdOT8f5AruKSY";
 
   // Initialize state from existing answers
   useEffect(() => {
@@ -89,6 +91,8 @@ const ReviewAnswers = () => {
 
     const fetchUploadStatus = async () => {
       const statusObj = {};
+      const mcqState = {};
+      const savedMcqState = {};
       for (const qid in userAnswerIds) {
         const user_answer_id = userAnswerIds[qid];
         try {
@@ -98,12 +102,24 @@ const ReviewAnswers = () => {
           // If user_answer is not null, mark as uploaded
           if (res.data && res.data.user_answer) {
             statusObj[qid] = "uploaded";
+            const answerAlphabet = res.data.user_answer;
+            if (
+              typeof answerAlphabet === "string" &&
+              answerAlphabet.length === 1 &&
+              answerAlphabet.match(/[A-Z]/i)
+            ) {
+              mcqState[qid] = answerAlphabet.charCodeAt(0) - 65;
+              savedMcqState[qid] = true; // Mark as saved if answer exists
+            }
           }
         } catch (err) {
+          console.log("Error", err);
           // Optionally handle error
         }
       }
       setUploadedStatus((prev) => ({ ...prev, ...statusObj }));
+      setMcqAnswers((prev) => ({ ...prev, ...mcqState }));
+      setSavedMcq((prev) => ({ ...prev, ...savedMcqState })); // <-- Add this line
     };
 
     fetchUploadStatus();
@@ -231,6 +247,7 @@ const ReviewAnswers = () => {
     }
     setUploading(false);
   };
+
   // Generate QR data for a specific question
   const generateQRData = (question) => {
     // Create a URL that points to your camera instruction page
@@ -257,6 +274,7 @@ const ReviewAnswers = () => {
   //   console.log("QR Data URL:", qrData);
   //   setShowQR(true);
   // };
+
   const handleQROption = (qid, section, questionNumber) => {
     if (!section) {
       alert("Section information is missing!");
@@ -299,10 +317,27 @@ const ReviewAnswers = () => {
               </span>
             </label>
           ))}
+            {mcqAnswers[q.question_id] !== undefined && !savedMcq[q.question_id] && (
+        <div className="flex gap-4 mt-2">
+          <button
+            className="px-4 py-1 bg-blue-600 text-white rounded shadow"
+            onClick={() => handleSaveMCQ(q.question_id)}
+          >
+            Save
+          </button>
+          <button
+            className="px-4 py-1 bg-red-500 text-white rounded shadow"
+            onClick={() => handleClearMCQ(q.question_id)}
+          >
+            Clear Response
+          </button>
+        </div>
+      )}
         </div>
       );
     }
 
+    //True and False
     if (q.question_type_name === "True/False") {
       return (
         <div className="flex gap-4 mt-2">
@@ -328,7 +363,24 @@ const ReviewAnswers = () => {
             />
             False
           </label>
+          {tfAnswers[q.question_id] !== undefined && (
+            <div className="flex gap-4 mt-2">
+          <button
+            className="px-4 py-1 bg-blue-600 text-white rounded shadow"
+            onClick={() => handleSaveMCQ(q.question_id)}
+          >
+            Save
+          </button>
+          <button
+            className="px-4 py-1 bg-red-500 text-white rounded shadow"
+            onClick={() => handleClearMCQ(q.question_id)}
+          >
+            Clear Response
+          </button>
         </div>
+        
+      )}
+      </div>
       );
     }
 
@@ -450,74 +502,260 @@ const ReviewAnswers = () => {
   };
 
   // Final submit: call API for all questions
-  const handleFinalSubmit = async () => {
-    setUploading(true);
-    try {
-      // MCQ/TF/Match
-      for (const qid in userAnswerIds) {
-        const user_answer_id = userAnswerIds[qid];
-        // MCQ
-        if (mcqAnswers[qid] !== undefined) {
-          await axios.post(
-            "https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer",
-            {
-              userAnswerId: user_answer_id,
-              value: mcqAnswers[qid],
-            }
-          );
-        }
-        // True/False
-        else if (tfAnswers[qid] !== undefined) {
-          await axios.post(
-            "https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer",
-            {
-              userAnswerId: user_answer_id,
-              value: tfAnswers[qid],
-            }
-          );
-        }
-        // Match the Following
-        else if (Object.keys(matchAnswers).some((k) => k.startsWith(qid))) {
-          // Send all match values for this question as needed by your API
-          // Example: { answerid, value: { 0: "A", 1: "B", ... } }
-          const matchObj = {};
-          Object.keys(matchAnswers).forEach((k) => {
-            if (k.startsWith(qid)) {
-              const idx = k.split("_")[1];
-              matchObj[idx] = matchAnswers[k];
-            }
-          });
-          await axios.post(
-            "https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer",
-            {
-              answerid: user_answer_id,
-              value: matchObj,
-            }
-          );
-        }
-        // Theory with images
-        if (pendingUploads[qid] && pendingUploads[qid].length > 0) {
-          for (let file of pendingUploads[qid]) {
-            const formData = new FormData();
-            formData.append("userAnswerId", user_answer_id);
-            formData.append("image", file);
-            await axios.post(
-              "https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer",
-              formData,
-              {
-                headers: { "Content-Type": "multipart/form-data" },
-              }
-            );
-          }
-        }
-      }
-      alert("All answers submitted!");
-      navigate("/");
-    } catch (err) {
-      alert("Submission failed. Please try again.");
+  // const handleFinalSubmit = async () => {
+  //   setUploading(true);
+  //   try {
+  //     // MCQ/TF/Match
+  //     for (const qid in userAnswerIds) {
+  //       const user_answer_id = userAnswerIds[qid];
+  //       // MCQ
+  //       if (mcqAnswers[qid] !== undefined) {
+  //         await axios.post(
+  //           "https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer",
+  //           {
+  //             userAnswerId: user_answer_id,
+  //             value: mcqAnswers[qid],
+  //           }
+  //         );
+  //       }
+  //       // True/False
+  //       else if (tfAnswers[qid] !== undefined) {
+  //         await axios.post(
+  //           "https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer",
+  //           {
+  //             userAnswerId: user_answer_id,
+  //             value: tfAnswers[qid],
+  //           }
+  //         );
+  //       }
+  //       // Match the Following
+  //       else if (Object.keys(matchAnswers).some((k) => k.startsWith(qid))) {
+  //         // Send all match values for this question as needed by your API
+  //         // Example: { answerid, value: { 0: "A", 1: "B", ... } }
+  //         const matchObj = {};
+  //         Object.keys(matchAnswers).forEach((k) => {
+  //           if (k.startsWith(qid)) {
+  //             const idx = k.split("_")[1];
+  //             matchObj[idx] = matchAnswers[k];
+  //           }
+  //         });
+  //         await axios.post(
+  //           "https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer",
+  //           {
+  //             answerid: user_answer_id,
+  //             value: matchObj,
+  //           }
+  //         );
+  //       }
+  //       // Theory with images
+  //       if (pendingUploads[qid] && pendingUploads[qid].length > 0) {
+  //         for (let file of pendingUploads[qid]) {
+  //           const formData = new FormData();
+  //           formData.append("userAnswerId", user_answer_id);
+  //           formData.append("image", file);
+  //           await axios.post(
+  //             "https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer",
+  //             formData,
+  //             {
+  //               headers: { "Content-Type": "multipart/form-data" },
+  //             }
+  //           );
+  //         }
+  //       }
+  //     }
+  //     alert("All answers submitted!");
+  //     navigate("/solutionpage");
+  //   } catch (err) {
+  //     alert("Submission failed. Please try again.");
+  //   }
+  //   setUploading(false);
+  // };
+
+  const refreshSingleMCQAnswer = async (qid, user_answer_id) => {
+  try {
+    const res = await axios.get(
+      `https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/get?user_answer_id=${user_answer_id}`
+    );
+    if (res.data && res.data.user_answer) {
+      // Convert alphabet back to index for checked state
+      const answerAlphabet = res.data.user_answer;
+      const idx = answerAlphabet
+        ? answerAlphabet.charCodeAt(0) - 65
+        : undefined;
+      setMcqAnswers((prev) => ({ ...prev, [qid]: idx }));
     }
-    setUploading(false);
-  };
+  } catch (err) {
+    // Optionally handle error
+  }
+};
+
+  const handleSaveMCQ = async (qid) => {
+  const user_answer_id = userAnswerIds[qid];
+    // Convert index to alphabet (A, B, C, ...)
+  const selectedIdx = mcqAnswers[qid];
+  const selectedAlphabet = String.fromCharCode(65 + Number(selectedIdx));
+  const MCQpayload = {
+        userAnswerId: user_answer_id,
+        userAnswerImages: null,
+        userAnswerText: selectedAlphabet,
+        answerUploadType: "ANSWER_TEXT",
+      }
+  try {
+    await axios.post(
+      "https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer",
+      MCQpayload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    console.log("MCQ Payload", MCQpayload);
+     await refreshSingleMCQAnswer(qid, user_answer_id);
+      setSavedMcq((prev) => ({ ...prev, [qid]: true })); // Mark as saved
+    alert("Answer saved!");
+  } catch (err) {
+    alert("Failed to save answer.");
+  }
+};
+
+const handleClearMCQ = (qid) => {
+   setSavedMcq((prev) => ({ ...prev, [qid]: true })); // Mark as saved
+  setMcqAnswers((prev) => ({ ...prev, [qid]: undefined }));
+};
+
+
+  const handleFinalSubmit = async () => {
+  setUploading(true);
+ const payload = {
+      // user_ass_id: questionPaperData.user_assessment_id,
+      assessment_status: "SUBMITTED",
+      time_taken: time_taken,
+      ass_end_time: ass_end_time,
+      // ...other parameters as needed
+    };
+    console.log("Final Submit Payload", payload);
+  try {
+    const response = await axios.get(
+      // `https://api-dev.mindshaala.com/api/v1/cil/assessment/submit/theory?user_ass_id=${user_ass_id}`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    // const requests = [];
+
+    // for (const qid in userAnswerIds) {
+    //   const user_answer_id = userAnswerIds[qid];
+
+    //   // MCQ
+    //   if (mcqAnswers[qid] !== undefined) {
+    //     requests.push(
+    //       axios.post(
+    //         `https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer`,
+    //         {
+    //           userAnswerId: user_answer_id,
+    //           userAnswerImages: null,
+    //           userAnswerText: mcqAnswers[qid],
+    //           answerUploadType: "ANSWER_TEXT",
+    //         },
+    //         {
+    //         headers: {
+    //           Authorization: `Bearer ${token}`,
+    //           "Content-Type": "multipart/form-data",
+    //         },
+    //       }
+    //       )
+    //     );
+    //   }
+
+    //   // True/False
+    //   if (tfAnswers[qid] !== undefined) {
+    //     requests.push(
+    //       axios.post(
+    //         `https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer`,
+    //         {
+    //           userAnswerId: user_answer_id,
+    //           userAnswerImages: null,
+    //           userAnswerText: tfAnswers[qid],
+    //           answerUploadType: "ANSWER_TEXT",
+    //         },
+    //         {
+    //         headers: {
+    //           Authorization: `Bearer ${token}`,
+    //           "Content-Type": "multipart/form-data",
+    //         },
+    //       }
+    //       )
+    //     );
+    //   }
+
+    //   // Match the Following
+    //   if (Object.keys(matchAnswers).some((k) => k.startsWith(qid))) {
+    //     const matchObj = {};
+    //     Object.keys(matchAnswers).forEach((k) => {
+    //       if (k.startsWith(qid)) {
+    //         const idx = k.split("_")[1];
+    //         matchObj[idx] = matchAnswers[k];
+    //       }
+    //     });
+    //     requests.push(
+    //       axios.post(
+    //         `https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer`,
+    //         {
+    //           userAnswerId: user_answer_id,
+    //           userAnswerImages: null,
+    //           userAnswerText: matchObj,
+    //           answerUploadType: "ANSWER_TEXT",
+    //         },
+    //         {
+    //         headers: {
+    //           Authorization: `Bearer ${token}`,
+    //           "Content-Type": "multipart/form-data",
+    //         },
+    //       }
+    //       )
+    //     );
+    //   }
+
+      // Theory with images
+      // if (pendingUploads[qid] && pendingUploads[qid].length > 0) {
+      //   for (let file of pendingUploads[qid]) {
+      //     const formData = new FormData();
+      //     formData.append("userAnswerId", user_answer_id);
+      //     formData.append("userAnswerImages", file);
+      //     formData.append("userAnswerText", null);
+      //     formData.append("answerUploadType", "ANSWER_IMAGE");
+      //     requests.push(
+      //       axios.post(
+      //         `https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer`,
+      //         formData,
+      //         {
+      //           headers: { "Content-Type": "multipart/form-data" },
+      //         }
+      //       )
+      //     );
+      //   }
+      // }
+    // }
+
+    // await Promise.all(requests);
+
+    alert("All answers submitted!");
+    console.log("All requests completed successfully");
+    console.log("Navigating to solution page");
+    navigate("/solutionpage");
+  } catch (err) {
+    alert("Submission failed. Please try again.");
+    console.error("Submission error:", err);
+  }
+  setUploading(false);
+};
+
 
   const closeUploadModal = () => {
     setUploadModal({ open: false, qid: null, section: null });
@@ -528,7 +766,7 @@ const ReviewAnswers = () => {
     setQrData(null);
   };
 
-  const handleAddMore = () => {
+  const handleAbdMore = () => {
     // Camera stays open, just allow another capture
   };
 
