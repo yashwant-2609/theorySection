@@ -280,14 +280,15 @@ const ReviewAnswers = () => {
       alert("Section information is missing!");
       return;
     }
-    localStorage.setItem("cameraInfo", JSON.stringify({
-      sectionNumber: section.section_number,
-      sectionHeading: section.section_heading,
-      questionNumber: questionNumber,
-    }));
+    // localStorage.setItem("cameraInfo", JSON.stringify({
+    //   sectionNumber: section.section_number,
+    //   sectionHeading: section.section_heading,
+    //   questionNumber: questionNumber,
+    // }));
+    
     // setQrData(`${window.location.origin}/camera-instructions`);
     // setQrData(`${window.location.origin}/#/camera-instructions`);
-    setQrData(`${window.location.origin}/camera-instructions?questionId=${question.question_id}&userAnswerId=${userAnswerIds[question.question_id]}`)
+   setQrData(`${window.location.origin}/#/camera-instructions?questionId=${qid}&userAnswerId=${userAnswerIds[qid]}`);
     setShowQR(true);
   };
 
