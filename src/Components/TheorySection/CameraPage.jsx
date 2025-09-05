@@ -114,7 +114,8 @@ const CameraPage = () => {
       imageBlobs.forEach((blob, index) => {
         formData.append('images', blob, `answer-${index}.jpg`);
       });
-      
+      console.log("Parameter Data", questionId ,assessmentId,sectionId);
+      console.log("form data", formData)
       // Upload to your server
      const res = await axios.post(
           "https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer",
