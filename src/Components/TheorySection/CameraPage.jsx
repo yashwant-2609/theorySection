@@ -93,6 +93,8 @@ const CameraPage = () => {
 
 
   const uploadImages = async () => {
+      const token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5MTkxMTI3NjcyNzYiLCJ0b2tlblZlcnNpb24iOjE3NTYzMTQyNzkxMTAxODk3LCJpYXQiOjE3NTY0ODk5MjgsImV4cCI6MzUxMzAxNzEwNX0.TgVE9qc5yztYw9g49mikqF2bueSi8-KdOT8f5AruKSY";
+
     // Implement upload logic to your server
     try {
       // Convert data URLs to Blobs for uploading
