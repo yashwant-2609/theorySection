@@ -122,22 +122,22 @@ const CameraPage = () => {
       formData.append("userAnswerImages", blob, "answer.jpg"); // <-- Pass image
       formData.append("userAnswerText", null); // <-- Pass null
       formData.append("answerUploadType", "ANSWER_IMAGE"); // <-- Pass type
-        }
-
+      
       console.log("Parameter Data", userAnswerId );
       console.log("form data", formData)
       // Upload to your server
-     const res = await axios.post(
-          "https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer",
-          formData,
-          {
+      const res = await axios.post(
+        "https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer",
+        formData,
+        {
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "multipart/form-data",
             },
           }
         );
-      
+        
+      }
       if (response.ok) {
         alert('Images uploaded successfully!');
         navigate('/'); // Return to home or review page
