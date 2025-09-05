@@ -286,7 +286,8 @@ const ReviewAnswers = () => {
       questionNumber: questionNumber,
     }));
     // setQrData(`${window.location.origin}/camera-instructions`);
-    setQrData(`${window.location.origin}/#/camera-instructions`);
+    // setQrData(`${window.location.origin}/#/camera-instructions`);
+    setQrData(`${window.location.origin}/camera-instructions?questionId=${question.question_id}&userAnswerId=${userAnswerIds[question.question_id]}`)
     setShowQR(true);
   };
 
