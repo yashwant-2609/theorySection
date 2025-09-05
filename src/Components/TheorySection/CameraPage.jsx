@@ -126,7 +126,7 @@ const CameraPage = () => {
       console.log("Parameter Data", userAnswerId );
       console.log("form data", formData)
       // Upload to your server
-      const res = await axios.post(
+      const response = await axios.post(
         "https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer",
         formData,
         {
@@ -138,9 +138,9 @@ const CameraPage = () => {
         );
         
       }
-      if (response.ok) {
+      if (response.status === 200) {
         alert('Images uploaded successfully!');
-        navigate('/'); // Return to home or review page
+        navigate('/solutionpage'); // Return to home or review page
       } else {
         throw new Error('Upload failed');
       }
