@@ -20,6 +20,7 @@ export const API_TheoryPaper = () => {
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState("");
   const [seconds, setSeconds] = useState(0);
+  const [userassid ,setUserAssId] = useState('');
 //   const [secondsLeft, setSecondsLeft] = useState(() => {
 //   // Parse time_allowed (e.g., "3 hours" or "180 minutes")
 //   const timeStr = questionPaperData.exam_details?.time_allowed || "80";
@@ -61,8 +62,11 @@ const handleSubmit = () => {
       userAnswerIds,// <-- pass this to next page
       time_taken: timeTaken,
       ass_end_time: assEndTime,
+      user_ass_id : userassid,
     } 
-  });
+  }
+);
+console.log(userassid);
 };
 
 // useEffect(() => {
@@ -83,7 +87,7 @@ const handleSubmit = () => {
 // };
 
   // API configuration
-  const API_BASE_URL = "https://api-dev.mindshaala.com/api/v1/cil/assessment/fetch/theory?user_ass_id=101119";
+  const API_BASE_URL = "https://api-dev.mindshaala.com/api/v1/cil/assessment/fetch/theory?user_ass_id=101120";
   // const USER_ASS_ID = 101104;
 
   const fetchQuestionDataFromApi = async () => {
@@ -102,6 +106,7 @@ const handleSubmit = () => {
         // console.log(response.data);
         setQuestionPaperData(response.data);
         setMinutes(response.data?.total_time);
+        setUserAssId(response.data?.user_ass_id);
 
       } else {
         throw new Error("No data received from API");

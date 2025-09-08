@@ -137,18 +137,18 @@ const CameraPage = () => {
           }
         );
         
+        if (response.status === 200) {
+          alert('Images uploaded successfully!');
+          navigate('/solutionpage'); // Return to home or review page
+        } else {
+          throw new Error('Upload failed');
+        }
       }
-      if (response.status === 200) {
-        alert('Images uploaded successfully!');
-        navigate('/solutionpage'); // Return to home or review page
-      } else {
-        throw new Error('Upload failed');
+      } catch (err) {
+        console.error('Upload error:', err);
+        alert('Error uploading images: ' + err.message);
       }
-    } catch (err) {
-      console.error('Upload error:', err);
-      alert('Error uploading images: ' + err.message);
-    }
-  };
+    };
 
   const removeImage = (index) => {
     setCapturedImages(prev => prev.filter((_, i) => i !== index));

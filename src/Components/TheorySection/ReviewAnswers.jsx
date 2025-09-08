@@ -13,7 +13,8 @@ const uploadOptions = [
 
 const ReviewAnswers = () => {
   const { state } = useLocation();
-  const { answers, questionPaperData, userAnswerIds, time_taken,ass_end_time } = state || {};
+  const { answers, questionPaperData, userAnswerIds, time_taken,ass_end_time,user_ass_id } = state || {};
+  // console.log(user_ass_id);
   const [uploadModal, setUploadModal] = useState({
     open: false,
     qid: null,
@@ -54,9 +55,15 @@ const ReviewAnswers = () => {
           if (
             q.question_type_name === "MCQ1" &&
             answers[q.question_id] !== undefined
-          ) {
-            mcqState[q.question_id] = answers[q.question_id];
-          } else if (
+          ) 
+          {
+      const ans = answers[q.question_id];
+      if (typeof ans === "string" && ans.length === 1 && ans.match(/[A-Z]/i)) {
+        mcqState[q.question_id] = ans.charCodeAt(0) - 65;
+      } else if (!isNaN(Number(ans))) {
+        mcqState[q.question_id] = Number(ans);
+      }
+    } else if (
             q.question_type_name === "True/False" &&
             answers[q.question_id] !== undefined
           ) {
@@ -102,16 +109,57 @@ const ReviewAnswers = () => {
           // If user_answer is not null, mark as uploaded
           if (res.data && res.data.user_answer) {
             statusObj[qid] = "uploaded";
-            const answerAlphabet = res.data.user_answer;
-            if (
-              typeof answerAlphabet === "string" &&
-              answerAlphabet.length === 1 &&
-              answerAlphabet.match(/[A-Z]/i)
-            ) {
-              mcqState[qid] = answerAlphabet.charCodeAt(0) - 65;
-              savedMcqState[qid] = true; // Mark as saved if answer exists
-            }
-          }
+            // const answerAlphabet = res.data.user_answer;
+            // if (
+            //   typeof answerAlphabet === "string" &&
+            //   answerAlphabet.length === 1 &&
+            //   answerAlphabet.match(/[A-Z]/i)
+            // ) {
+            //   mcqState[qid] = answerAlphabet.charCodeAt(0) - 65;
+            //   savedMcqState[qid] = true; // Mark as saved if answer exists
+            // }
+          const answer = res.data.user_answer;
+const options = [
+  // You need to get the options for this qid from your questionPaperData
+  // Find the section and question for this qid:
+  ...(() => {
+    for (const section of questionPaperData.section_data || []) {
+      for (const q of section.question_data) {
+        if (q.question_id == qid) {
+          return [
+            q.option1_latex,
+            q.option2_latex,
+            q.option3_latex,
+            q.option4_latex,
+            q.option5_latex,
+          ].filter(Boolean);
+        }
+      }
+    }
+    return [];
+  })()
+];
+
+if (typeof answer === "string") {
+  if (answer.length === 1 && answer.match(/[A-Z]/i)) {
+    mcqState[qid] = answer.charCodeAt(0) - 65;
+    savedMcqState[qid] = true;
+  } else if (!isNaN(Number(answer))) {
+    mcqState[qid] = Number(answer);
+    savedMcqState[qid] = true;
+  } else {
+    // Try to match the answer value to the option value
+    const idx = options.findIndex(opt => opt === answer);
+    if (idx !== -1) {
+      mcqState[qid] = idx;
+      savedMcqState[qid] = true;
+    }
+  }
+} else if (typeof answer === "number") {
+  mcqState[qid] = answer;
+  savedMcqState[qid] = true;
+}
+}
         } catch (err) {
           console.log("Error", err);
           // Optionally handle error
@@ -639,8 +687,8 @@ const handleClearMCQ = (qid) => {
     };
     console.log("Final Submit Payload", payload);
   try {
-    const response = await axios.get(
-      // `https://api-dev.mindshaala.com/api/v1/cil/assessment/submit/theory?user_ass_id=${user_ass_id}`,
+    const response = await axios.post(
+      `https://api-dev.mindshaala.com/api/v1/cil/assessment/submit/theory?user_ass_id=${user_ass_id}`,
       payload,
       {
         headers: {
@@ -746,11 +794,12 @@ const handleClearMCQ = (qid) => {
     // }
 
     // await Promise.all(requests);
-
+    if(response.status === 200){
     alert("All answers submitted!");
     console.log("All requests completed successfully");
     console.log("Navigating to solution page");
     navigate("/solutionpage");
+    }
   } catch (err) {
     alert("Submission failed. Please try again.");
     console.error("Submission error:", err);
@@ -875,8 +924,8 @@ const handleClearMCQ = (qid) => {
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          // onClick={handleFinalSubmit}
-          onClick={() => navigate("/solutionpage")}
+          onClick={handleFinalSubmit}
+          // onClick={() => navigate("/solutionpage")}
           disabled={uploading}
           className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg shadow-lg font-bold text-lg transition-all duration-300"
         >

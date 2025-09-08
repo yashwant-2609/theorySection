@@ -74,7 +74,7 @@ const TheorySolution2 = () => {
   try {
     const response = await axios.get(
     //   `https://api-dev.mindshaala.com/api/v1/cil/assessment/solution/theory?user_ass_id=${user_ass_id}`
-    `https://api-dev.mindshaala.com/api/v1/cil/assessment/solution/theory?user_ass_id=101119`
+    `https://api-dev.mindshaala.com/api/v1/cil/assessment/solution/theory?user_ass_id=101120`
     );
     if (response.status === 200 && response.data && response.data.section_details) {
       console.log("Response Data", response.data)
@@ -94,7 +94,15 @@ const TheorySolution2 = () => {
                 q.option4_latex,
                 q.option5_latex,
               ].filter(Boolean),
-              userAnswer: q.user_answer || null,
+              // userAnswer: q.user_answer || null,
+              // userAnswer: getUserAnswerLabel(q.user_answer),
+                userAnswer: getUserAnswerLabel(q.user_answer, [
+    q.option1_latex,
+    q.option2_latex,
+    q.option3_latex,
+    q.option4_latex,
+    q.option5_latex,
+  ].filter(Boolean)),
               correctAnswer: getCorrectOptionLabel(q),
               attempted: q.attempt_status !== "NOT_VISITED",
               feedback: "No Feedback Available", // Set feedback as empty for now
@@ -116,6 +124,7 @@ const TheorySolution2 = () => {
       setQuestions(questions);
     }
     setLoading(false);
+    console.log("Questions", questions)
   } catch (error) {
     console.error("Error fetching solution data:", error);
     setLoading(false);
@@ -124,6 +133,7 @@ const TheorySolution2 = () => {
 
 useEffect(() => {
   fetchSolutionData();
+  
 }, []);
 
 // Helper to get correct answer label for MCQ
@@ -138,6 +148,26 @@ function getCorrectOptionLabel(q) {
   ].filter(Boolean);
   const idx = options.findIndex((opt) => opt === q.answer_latex);
   return idx !== -1 ? String.fromCharCode(65 + idx) : "";
+}
+
+// function getUserAnswerLabel(ans) {
+//   if (typeof ans === "string" && ans.length === 1 && ans.match(/[A-Z]/i)) {
+//     return ans;
+//   } else if (!isNaN(Number(ans))) {
+//     return String.fromCharCode(65 + Number(ans));
+//   }
+//   return "";
+// }
+function getUserAnswerLabel(ans, options) {
+  if (typeof ans === "string" && ans.length === 1 && ans.match(/[A-Z]/i)) {
+    return ans;
+  } else if (!isNaN(Number(ans))) {
+    return String.fromCharCode(65 + Number(ans));
+  } else if (typeof ans === "string" && options) {
+    const idx = options.findIndex(opt => opt === ans);
+    if (idx !== -1) return String.fromCharCode(65 + idx);
+  }
+  return "";
 }
 
   const toggleSolution = (questionId) => {
@@ -183,7 +213,9 @@ function getCorrectOptionLabel(q) {
             
             let optionClass = 'p-4 rounded-lg border-2 transition-all duration-200 ';
             
-            if (question.attempted) {
+            //Uncomment this when attempted status set correctly from backend
+            // if (question.attempted) {
+            if (question) {
               if (isCorrectAnswer && isUserAnswer) {
                 optionClass += 'bg-green-50 border-green-500 text-green-800';
               } else if (isCorrectAnswer) {
@@ -227,7 +259,7 @@ function getCorrectOptionLabel(q) {
             <div>
               <span className="text-sm font-medium text-gray-600">Your Answer:</span>
               <span className="ml-2 font-semibold">
-                {question.attempted ? question.userAnswer : 'Not Attempted'}
+                { question.userAnswer || 'Not Attempted'}
               </span>
             </div>
             <div>
