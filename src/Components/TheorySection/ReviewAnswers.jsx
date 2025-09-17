@@ -254,6 +254,8 @@ if (typeof answer === "string") {
         const formData = new FormData();
         formData.append("userAnswerId", userAnswerId);
         formData.append("userAnswerImages", file);
+        formData.append("userAnswerText", null);
+        formData.append("answerUploadType", "ANSWER_IMAGE");
         // Replace with your actual API endpoint
         const res = await axios.post(
           "https://api-dev.mindshaala.com/api/v1/cil/user-answer-data/save/theory_answer",
@@ -685,7 +687,7 @@ const handleClearMCQ = (qid) => {
       ass_end_time: ass_end_time,
       // ...other parameters as needed
     };
-    console.log("Final Submit Payload", payload);
+    // console.log("Final Submit Payload", payload);
   try {
     const response = await axios.post(
       `https://api-dev.mindshaala.com/api/v1/cil/assessment/submit/theory?user_ass_id=${user_ass_id}`,
@@ -831,6 +833,7 @@ const handleClearMCQ = (qid) => {
   //     handleQROption(question);
   //   }
   // };
+
   const handleUploadOption = (option, qid, section, questionNumber) => {
     if (option.value === "device") {
       fileInputRef.current.click();
@@ -1065,6 +1068,7 @@ const handleClearMCQ = (qid) => {
                       ))}
                     </div>
                   )}
+
                   {/* Show Upload and Cancel only if at least one image is captured */}
                   {pendingUploads[uploadModal.qid] && pendingUploads[uploadModal.qid].length > 0 && (
                     <div className="flex gap-4 mt-2">
@@ -1184,6 +1188,7 @@ const handleClearMCQ = (qid) => {
                   </div>
                 </div>
               )} */}
+              
               {uploadComplete && pendingUploads[uploadModal.qid] && (
                 <div>
                   <div className="flex flex-wrap gap-2 mb-4">

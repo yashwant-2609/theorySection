@@ -69,7 +69,7 @@ const SolutionPage = () => {
   const fetchSolutionData = async () => {
   try {
     const response = await axios.get(
-      `https://api-dev.mindshaala.com/api/v1/cil/assessment/solution/theory?user_ass_id=101120`
+      `https://api-dev.mindshaala.com/api/v1/cil/assessment/solution/theory?user_ass_id=101119`
     );
     if (response.status === 200 && response.data && response.data.section_details) {
       // Flatten and map the data

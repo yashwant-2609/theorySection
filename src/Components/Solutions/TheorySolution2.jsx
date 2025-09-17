@@ -74,7 +74,7 @@ const TheorySolution2 = () => {
   try {
     const response = await axios.get(
     //   `https://api-dev.mindshaala.com/api/v1/cil/assessment/solution/theory?user_ass_id=${user_ass_id}`
-    `https://api-dev.mindshaala.com/api/v1/cil/assessment/solution/theory?user_ass_id=101120`
+    `https://api-dev.mindshaala.com/api/v1/cil/assessment/solution/theory?user_ass_id=101119`
     );
     if (response.status === 200 && response.data && response.data.section_details) {
       console.log("Response Data", response.data)
