@@ -295,21 +295,25 @@ const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
         )}
       </div>
 
-      {showCrop && cropImageSrc && (
+{showCrop && cropImageSrc && (
   <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-    <div className="bg-white p-4 rounded shadow-lg relative">
-      <Cropper
-        image={cropImageSrc}
-        crop={crop}
-        zoom={zoom}
-        aspect={1} // You can change aspect ratio as needed
-        onCropChange={setCrop}
-        onZoomChange={setZoom}
-        onCropComplete={(_, croppedAreaPixels) => setCroppedAreaPixels(croppedAreaPixels)}
-      />
-      <div className="flex justify-between mt-4">
+    <div className="bg-white p-4 rounded shadow-lg relative w-full max-w-[90vw]">
+      <div className="relative w-full h-[60vw] max-h-[70vh] min-h-[300px]">
+        <Cropper
+          image={cropImageSrc}
+          crop={crop}
+          zoom={zoom}
+          aspect={undefined} // Free aspect ratio
+          cropShape="rect"
+          showGrid={true}
+          onCropChange={setCrop}
+          onZoomChange={setZoom}
+          onCropComplete={(_, croppedAreaPixels) => setCroppedAreaPixels(croppedAreaPixels)}
+        />
+      </div>
+      <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-2">
         <button
-          className="px-4 py-2 bg-green-600 text-white rounded"
+          className="px-4 py-2 bg-green-600 text-white rounded w-full sm:w-auto"
           onClick={async () => {
             const croppedImg = await getCroppedImg(cropImageSrc, croppedAreaPixels);
             setCapturedImages(prev => [...prev, croppedImg]);
@@ -320,7 +324,7 @@ const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
           OK
         </button>
         <button
-          className="px-4 py-2 bg-gray-400 text-white rounded"
+          className="px-4 py-2 bg-gray-400 text-white rounded w-full sm:w-auto"
           onClick={() => {
             setShowCrop(false);
             setCropImageSrc(null);
