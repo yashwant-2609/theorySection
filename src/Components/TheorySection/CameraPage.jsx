@@ -347,20 +347,20 @@ const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
     <div className="bg-white p-4 rounded shadow-lg relative w-full max-w-[90vw]">
       <div className="relative w-full h-[60vw] max-h-[70vh] min-h-[300px] flex items-center justify-center">
-       <Cropper
-  src={cropImageSrc}
-  style={{ height: "100%", width: "100%" }}
-  initialAspectRatio={NaN}
-  guides={true}
-  viewMode={1} // restrict crop box to image
-  dragMode="crop" // crop box is adjustable, image is fixed
-  cropBoxResizable={true}
-  cropBoxMovable={true}
-  background={false}
-  responsive={true}
-  autoCropArea={1}
-  onInitialized={instance => setCropperInstance(instance)}
-/>
+        <Cropper
+          src={cropImageSrc}
+          style={{ height: "100%", width: "100%" }}
+          initialAspectRatio={NaN}
+          guides={true}
+          viewMode={1}
+          dragMode="crop"
+          cropBoxResizable={true}
+          cropBoxMovable={true}
+          background={false}
+          responsive={true}
+          autoCropArea={1}
+          onInitialized={instance => setCropperInstance(instance)}
+        />
       </div>
       <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-2">
         <button
