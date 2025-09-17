@@ -87,7 +87,7 @@ console.log(userassid);
 // };
 
   // API configuration
-  const API_BASE_URL = "https://api-dev.mindshaala.com/api/v1/cil/assessment/fetch/theory?user_ass_id=101119";
+  const API_BASE_URL = "https://api-dev.mindshaala.com/api/v1/cil/assessment/fetch/theory?user_ass_id=101120";
   // const USER_ASS_ID = 101104;
 
   const fetchQuestionDataFromApi = async () => {
