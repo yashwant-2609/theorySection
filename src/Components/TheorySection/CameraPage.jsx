@@ -294,6 +294,44 @@ const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
           </>
         )}
       </div>
+
+      {showCrop && cropImageSrc && (
+  <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+    <div className="bg-white p-4 rounded shadow-lg relative">
+      <Cropper
+        image={cropImageSrc}
+        crop={crop}
+        zoom={zoom}
+        aspect={1} // You can change aspect ratio as needed
+        onCropChange={setCrop}
+        onZoomChange={setZoom}
+        onCropComplete={(_, croppedAreaPixels) => setCroppedAreaPixels(croppedAreaPixels)}
+      />
+      <div className="flex justify-between mt-4">
+        <button
+          className="px-4 py-2 bg-green-600 text-white rounded"
+          onClick={async () => {
+            const croppedImg = await getCroppedImg(cropImageSrc, croppedAreaPixels);
+            setCapturedImages(prev => [...prev, croppedImg]);
+            setShowCrop(false);
+            setCropImageSrc(null);
+          }}
+        >
+          OK
+        </button>
+        <button
+          className="px-4 py-2 bg-gray-400 text-white rounded"
+          onClick={() => {
+            setShowCrop(false);
+            setCropImageSrc(null);
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };
