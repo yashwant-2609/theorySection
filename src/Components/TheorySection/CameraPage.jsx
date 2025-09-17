@@ -1,6 +1,8 @@
 import axios from 'axios';
 import React, { useRef, useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import Cropper from 'react-easy-crop';
+import getCroppedImg from './utils/cropImage'; // We'll add this helper below
 
 const CameraPage = () => {
   const [searchParams] = useSearchParams();
@@ -20,6 +22,12 @@ const CameraPage = () => {
   const sectionNumber = cameraInfo.sectionNumber;
   const sectionHeading = cameraInfo.sectionHeading;
   const questionNumber = cameraInfo.questionNumber;
+
+  const [showCrop, setShowCrop] = useState(false);
+const [cropImageSrc, setCropImageSrc] = useState(null);
+const [crop, setCrop] = useState({ x: 0, y: 0 });
+const [zoom, setZoom] = useState(1);
+const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
   // useEffect(() => {
   //   // Automatically start camera when component mounts
@@ -54,19 +62,35 @@ const CameraPage = () => {
     }
   };
 
-  const captureImage = () => {
-    if (videoRef.current) {
-      const canvas = document.createElement('canvas');
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-      
-      const imageDataUrl = canvas.toDataURL('image/jpeg');
-      setCapturedImages(prev => [...prev, imageDataUrl]);
-    }
-  };
+  //Old Method
 
+  // const captureImage = () => {
+  //   if (videoRef.current) {
+  //     const canvas = document.createElement('canvas');
+  //     canvas.width = videoRef.current.videoWidth;
+  //     canvas.height = videoRef.current.videoHeight;
+  //     const ctx = canvas.getContext('2d');
+  //     ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      
+  //     const imageDataUrl = canvas.toDataURL('image/jpeg');
+  //     setCapturedImages(prev => [...prev, imageDataUrl]);
+  //   }
+  // };
+
+  //New Method
+  const captureImage = () => {
+  if (videoRef.current) {
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+    const imageDataUrl = canvas.toDataURL('image/jpeg');
+    setCropImageSrc(imageDataUrl);
+    setShowCrop(true);
+  }
+};
+  
   // const stopCamera = () => {
   //   if (stream) {
   //     stream.getTracks().forEach(track => track.stop());
