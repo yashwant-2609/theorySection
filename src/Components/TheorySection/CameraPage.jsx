@@ -3,6 +3,9 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from './utils/cropImage'; // We'll add this helper below
+import Cropper from "react-cropper";
+import "cropperjs/dist/cropper.css";
+
 
 const CameraPage = () => {
   const [searchParams] = useSearchParams();
@@ -22,6 +25,9 @@ const CameraPage = () => {
   const sectionNumber = cameraInfo.sectionNumber;
   const sectionHeading = cameraInfo.sectionHeading;
   const questionNumber = cameraInfo.questionNumber;
+
+  const [cropperInstance, setCropperInstance] = useState(null);
+
 
   const [showCrop, setShowCrop] = useState(false);
 const [cropImageSrc, setCropImageSrc] = useState(null);
@@ -295,7 +301,7 @@ const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
         )}
       </div>
 
-{showCrop && cropImageSrc && (
+{/* {showCrop && cropImageSrc && (
   <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
     <div className="bg-white p-4 rounded shadow-lg relative w-full max-w-[90vw]">
       <div className="relative w-full h-[60vw] max-h-[70vh] min-h-[300px]">
@@ -335,7 +341,60 @@ const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
       </div>
     </div>
   </div>
+)} */}
+
+  {showCrop && cropImageSrc && (
+  <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+    <div className="bg-white p-4 rounded shadow-lg relative w-full max-w-[90vw]">
+      <div className="relative w-full h-[60vw] max-h-[70vh] min-h-[300px] flex items-center justify-center">
+        <Cropper
+          src={cropImageSrc}
+          style={{ height: "100%", width: "100%" }}
+          initialAspectRatio={NaN}
+          guides={true}
+          viewMode={1} // restrict crop box to image
+          dragMode="none" // image is fixed
+          movable={false}
+          zoomable={false}
+          scalable={false}
+          rotatable={false}
+          cropBoxResizable={true}
+          cropBoxMovable={true}
+          background={false}
+          responsive={true}
+          autoCropArea={1}
+          onInitialized={instance => setCropperInstance(instance)}
+        />
+      </div>
+      <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-2">
+        <button
+          className="px-4 py-2 bg-green-600 text-white rounded w-full sm:w-auto"
+          onClick={async () => {
+            if (cropperInstance) {
+              const croppedImg = cropperInstance.getCroppedCanvas().toDataURL("image/jpeg");
+              setCapturedImages(prev => [...prev, croppedImg]);
+              setShowCrop(false);
+              setCropImageSrc(null);
+            }
+          }}
+        >
+          OK
+        </button>
+        <button
+          className="px-4 py-2 bg-gray-400 text-white rounded w-full sm:w-auto"
+          onClick={() => {
+            setShowCrop(false);
+            setCropImageSrc(null);
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
 )}
+
+
     </div>
   );
 };
