@@ -1,7 +1,7 @@
 import axios from 'axios';
 import React, { useRef, useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import Cropper from 'react-easy-crop';
+// import Cropper from 'react-easy-crop';
 import getCroppedImg from './utils/cropImage'; // We'll add this helper below
 import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
